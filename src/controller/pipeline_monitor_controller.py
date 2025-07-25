@@ -1,0 +1,48 @@
+# controller/pipeline_monitor_controller.py
+
+import time
+from clients.gitlab.job_client import JobClient
+from clients.logging.logger import logger
+
+PIPELINE_SUCCESS_STATES = {"success", "skipped", "canceled"}
+PIPELINE_RUNNING_STATES = {"running", "pending", "created", "scheduled"}
+PIPELINE_FAILED_STATES = {"failed"}
+PIPELINE_MANUAL_STATES = {"manual"}
+
+class PipelineMonitorController:
+    """
+    负责监控 GitLab pipeline 状态，打印和记录每个job的状态变化
+    """
+    def __init__(self, config):
+        self.config = config
+        self.job_client = JobClient()
+        self.interval = config.timeout.pipeline_check_interval
+
+    def monitor(self, project_id, pipeline_id):
+        last_statuses = {}
+        while True:
+            jobs = self.job_client.list_jobs(project_id, pipeline_id)
+            all_status = [j.status for j in jobs]
+            for job in jobs:
+                print(f"[Job: {job.name}] Status: {job.status}")
+                if last_statuses.get(job.name) != job.status:
+                    logger.info(f"[Job: {job.name}] Status changed: {last_statuses.get(job.name)} -> {job.status}")
+                last_statuses[job.name] = job.status
+            if all(s in PIPELINE_SUCCESS_STATES for s in all_status):
+                print("[INFO] Pipeline所有任务完成（成功/跳过/取消），结束。")
+                logger.info("All jobs succeeded/skipped/canceled.")
+                return "success", jobs
+            if any(s in PIPELINE_MANUAL_STATES for s in all_status):
+                print("[INFO] Pipeline等待人工操作，等待中...")
+                logger.info("Pipeline has manual state, waiting...")
+                time.sleep(self.interval)
+                continue
+            if any(s in PIPELINE_FAILED_STATES for s in all_status):
+                print("[WARN] Pipeline有任务失败，进入修复流程。")
+                logger.info("Pipeline detected failed job.")
+                return "failed", jobs
+            if any(s in PIPELINE_RUNNING_STATES for s in all_status):
+                time.sleep(self.interval)
+                continue
+            # 如果其他未知情况
+            time.sleep(self.interval)

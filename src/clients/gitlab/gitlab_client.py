@@ -6,7 +6,7 @@ from config.config_manager import ConfigManager
 class GitLabClient:
     def __init__(self):
         config = ConfigManager.get_config()
-        self.base_url = config.services.gitlab_url.rstrip("/")
+        self.base_url = getattr(config.services, "gitlab_http_url", config.services.gitlab_url).rstrip("/")
         self.token = config.authentication.gitlab_private_token
 
     def _headers(self):

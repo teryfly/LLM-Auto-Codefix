@@ -10,6 +10,7 @@ class PathsConfig(BaseModel):
 class ServicesConfig(BaseModel):
     grpc_port: str
     gitlab_url: str
+    gitlab_http_url: str
     llm_url: str
     llm_model: str
 

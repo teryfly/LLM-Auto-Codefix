@@ -5,7 +5,7 @@ from .git_commands import (
     checkout_branch,
     create_branch,
     pull,
-    push,
+    push_to_ai_branch,
     add_all_and_commit,
 )
 from .git_validator import (
@@ -17,11 +17,12 @@ import os
 
 class GitManager:
     def __init__(self, repo_url: str, work_dir: str):
-        self.repo_url = repo_url
+        self.repo_url = repo_url  # 必须为 SSH 地址
         self.work_dir = work_dir
 
     def ensure_repository(self):
         if not os.path.exists(self.work_dir) or not is_git_repository(self.work_dir):
+            # 仅用 SSH 地址 clone
             clone_repository(self.repo_url, self.work_dir)
         else:
             pull(self.work_dir)
@@ -38,5 +39,5 @@ class GitManager:
             return True
         return False
 
-    def push_branch(self, branch_name: str):
-        push(branch_name, self.work_dir)
+    def push_to_ai(self):
+        push_to_ai_branch(self.work_dir)

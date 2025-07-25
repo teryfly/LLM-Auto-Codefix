@@ -4,7 +4,7 @@ import sys
 from config.config_manager import ConfigManager
 from config.config_validator import validate_config
 from utils.helpers import exit_with_error
-from controller.main_controller import MainController
+from controller import MainController
 
 BANNER = r"""
 ===============================================================

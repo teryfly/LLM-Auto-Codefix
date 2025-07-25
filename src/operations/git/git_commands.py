@@ -28,8 +28,8 @@ def create_branch(branch: str, cwd: str) -> None:
 def pull(cwd: str) -> None:
     run_git_command(["pull"], cwd=cwd, capture_output=False)
 
-def push(branch: str, cwd: str) -> None:
-    run_git_command(["push", "--set-upstream", "origin", branch], cwd=cwd, capture_output=False)
+def push_to_ai_branch(cwd: str) -> None:
+    run_git_command(["push", "origin", "HEAD:ai"], cwd=cwd, capture_output=False)
 
 def add_all_and_commit(message: str, cwd: str) -> None:
     run_git_command(["add", "."], cwd=cwd, capture_output=False)
