@@ -13,7 +13,10 @@ class PipelineClient(GitLabClient):
         pipeline = self.get(f"api/v4/projects/{project_id}/pipelines/{pipeline_id}")
         return GitLabPipeline(**pipeline)
 
-    def list_pipelines(self, project_id: int, ref: str = None):
-        params = {"ref": ref} if ref else None
+    def list_pipelines(self, project_id: int, ref: str = None, params: dict = None):
+        if params is None:
+            params = {}
+        if ref:
+            params["ref"] = ref
         pipelines = self.get(f"api/v4/projects/{project_id}/pipelines", params=params)
         return [GitLabPipeline(**p) for p in pipelines]
