@@ -32,4 +32,5 @@ def run_debug_loop(config, project_info, mr):
         time.sleep(10)
         return False
 
+    # 点打印逻辑由 PipelineMonitorController 控制
     loop_ctrl.run_with_timeout(loop_body)

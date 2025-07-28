@@ -20,7 +20,7 @@ class PipelineMonitorController:
         
     def monitor(self, project_id, pipeline_id):
         last_statuses = {}
-        dot_counters = {}  # 新增：记录每个 job 的点数
+        dot_counters = {}
         while True:
             jobs = self.job_client.list_jobs(project_id, pipeline_id)
             all_status = [j.status for j in jobs]
@@ -29,16 +29,16 @@ class PipelineMonitorController:
                 current_status = job.status
                 previous_status = last_statuses.get(job_key)
                 if previous_status != current_status:
+                    # 状态变更，换行输出变更信息
                     print(f"\n[Job: {job.name}] Stage: {job.stage} | Status: {current_status}")
                     logger.info(f"[Job: {job.name}] Status changed: {previous_status} -> {current_status}")
                     last_statuses[job_key] = current_status
                     dot_counters[job_key] = 0
                 else:
-                    # 输出加点，不换行
+                    # 正常只输出点，不换行
                     print(".", end="", flush=True)
                     dot_counters[job_key] = dot_counters.get(job_key, 0) + 1
-                    if dot_counters[job_key] % 10 == 0:
-                        print("", end="\n", flush=True)  # 每10个点换行防止过长
+                    # 不再主动换行，除非状态变更
             if all(s in PIPELINE_SUCCESS_STATES for s in all_status):
                 print("\n[INFO] Pipeline所有任务完成（成功/跳过/取消），结束。")
                 logger.info("All jobs succeeded/skipped/canceled.")

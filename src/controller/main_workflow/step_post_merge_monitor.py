@@ -34,9 +34,8 @@ def monitor_post_merge_pipeline(config, project_info):
                 dot_count[key] = 0
             else:
                 print(".", end="", flush=True)
-                dot_count[key] += 1
-                if dot_count[key] % 10 == 0:
-                    print("", end="\n", flush=True)
+                dot_count[key] = dot_count.get(key, 0) + 1
+                # 不再主动换行，只输出点，除非状态变更
 
         if all(s in SUCCESS_STATES for s in statuses):
             print("\n[✅ 合并后部署完成]")
@@ -47,3 +46,6 @@ def monitor_post_merge_pipeline(config, project_info):
         if any(s in MANUAL_STATES for s in statuses):
             print("\n[⏸️ 等待人工操作]")
         time.sleep(2)
+
+# 确保 monitor_post_merge_pipeline 可被 import
+__all__ = ["monitor_post_merge_pipeline"]
