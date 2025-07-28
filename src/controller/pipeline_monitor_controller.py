@@ -17,32 +17,42 @@ class PipelineMonitorController:
         self.config = config
         self.job_client = JobClient()
         self.interval = config.timeout.pipeline_check_interval
-
+        
     def monitor(self, project_id, pipeline_id):
         last_statuses = {}
+        dot_counters = {}  # 新增：记录每个 job 的点数
         while True:
             jobs = self.job_client.list_jobs(project_id, pipeline_id)
             all_status = [j.status for j in jobs]
             for job in jobs:
-                print(f"[Job: {job.name}] Status: {job.status}")
-                if last_statuses.get(job.name) != job.status:
-                    logger.info(f"[Job: {job.name}] Status changed: {last_statuses.get(job.name)} -> {job.status}")
-                last_statuses[job.name] = job.status
+                job_key = f"{job.stage}-{job.name}" if job.stage else job.name
+                current_status = job.status
+                previous_status = last_statuses.get(job_key)
+                if previous_status != current_status:
+                    print(f"\n[Job: {job.name}] Stage: {job.stage} | Status: {current_status}")
+                    logger.info(f"[Job: {job.name}] Status changed: {previous_status} -> {current_status}")
+                    last_statuses[job_key] = current_status
+                    dot_counters[job_key] = 0
+                else:
+                    # 输出加点，不换行
+                    print(".", end="", flush=True)
+                    dot_counters[job_key] = dot_counters.get(job_key, 0) + 1
+                    if dot_counters[job_key] % 10 == 0:
+                        print("", end="\n", flush=True)  # 每10个点换行防止过长
             if all(s in PIPELINE_SUCCESS_STATES for s in all_status):
-                print("[INFO] Pipeline所有任务完成（成功/跳过/取消），结束。")
+                print("\n[INFO] Pipeline所有任务完成（成功/跳过/取消），结束。")
                 logger.info("All jobs succeeded/skipped/canceled.")
                 return "success", jobs
             if any(s in PIPELINE_MANUAL_STATES for s in all_status):
-                print("[INFO] Pipeline等待人工操作，等待中...")
+                print("\n[INFO] Pipeline等待人工操作，等待中...")
                 logger.info("Pipeline has manual state, waiting...")
                 time.sleep(self.interval)
                 continue
             if any(s in PIPELINE_FAILED_STATES for s in all_status):
-                print("[WARN] Pipeline有任务失败，进入修复流程。")
+                print("\n[WARN] Pipeline有任务失败，进入修复流程。")
                 logger.info("Pipeline detected failed job.")
                 return "failed", jobs
             if any(s in PIPELINE_RUNNING_STATES for s in all_status):
                 time.sleep(self.interval)
                 continue
-            # 如果其他未知情况
             time.sleep(self.interval)
