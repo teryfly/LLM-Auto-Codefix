@@ -1,6 +1,6 @@
 class APIClient {
   private baseURL: string;
-  constructor(baseURL: string = 'http://192.168.120.241:8001/api/v1') {  // 使用完整 URL
+  constructor(baseURL: string = 'http://192.168.120.111:8001/api/v1') {  // 使用完整 URL
     this.baseURL = baseURL;
   }
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
