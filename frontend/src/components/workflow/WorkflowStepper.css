@@ -2,7 +2,6 @@
   background: white;
   border-radius: 8px;
 }
-
 .stepper-header {
   display: flex;
   justify-content: space-between;
@@ -11,28 +10,23 @@
   padding-bottom: 1rem;
   border-bottom: 1px solid #e9ecef;
 }
-
 .stepper-header h3 {
   margin: 0;
   color: #333;
   font-size: 1.25rem;
   font-weight: 600;
 }
-
 .stepper-content {
   position: relative;
 }
-
 .steps-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
 .step-wrapper {
   position: relative;
 }
-
 .workflow-step {
   display: flex;
   align-items: flex-start;
@@ -43,35 +37,23 @@
   background: #f8f9fa;
   transition: all 0.3s ease;
 }
-
 .workflow-step.active {
   border-color: #007bff;
   background: #e3f2fd;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
-
 .workflow-step.completed {
   border-color: #28a745;
   background: #d4edda;
 }
-
 .workflow-step.failed {
   border-color: #dc3545;
   background: #f8d7da;
 }
-
 .workflow-step.running {
   border-color: #007bff;
   background: #e3f2fd;
-  animation: pulse 2s infinite;
 }
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
-}
-
 .step-indicator {
   display: flex;
   flex-direction: column;
@@ -79,7 +61,6 @@
   gap: 0.5rem;
   flex-shrink: 0;
 }
-
 .step-icon {
   width: 40px;
   height: 40px;
@@ -90,26 +71,49 @@
   font-size: 1.2rem;
   background: white;
   border: 2px solid #dee2e6;
+  position: relative;
 }
-
 .workflow-step.active .step-icon {
   border-color: #007bff;
   background: #007bff;
   color: white;
 }
-
 .workflow-step.completed .step-icon {
   border-color: #28a745;
   background: #28a745;
   color: white;
 }
-
 .workflow-step.failed .step-icon {
   border-color: #dc3545;
   background: #dc3545;
   color: white;
 }
-
+.workflow-step.running .step-icon {
+  border-color: #007bff;
+  background: #007bff;
+  color: white;
+}
+/* 运行状态的转圈动画 - 只应用于图标内的伪元素 */
+.workflow-step.running .step-icon::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid transparent;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 .step-number {
   font-size: 0.75rem;
   font-weight: 600;
@@ -120,48 +124,44 @@
   min-width: 24px;
   text-align: center;
 }
-
 .workflow-step.active .step-number {
   background: #007bff;
   color: white;
 }
-
 .workflow-step.completed .step-number {
   background: #28a745;
   color: white;
 }
-
 .workflow-step.failed .step-number {
   background: #dc3545;
   color: white;
 }
-
+.workflow-step.running .step-number {
+  background: #007bff;
+  color: white;
+}
 .step-content {
   flex: 1;
   min-width: 0;
 }
-
 .step-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
 }
-
 .step-title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
   color: #333;
 }
-
 .step-description {
   margin: 0 0 0.75rem 0;
   color: #6c757d;
   font-size: 0.9rem;
   line-height: 1.4;
 }
-
 .step-error {
   display: flex;
   align-items: center;
@@ -172,28 +172,23 @@
   border: 1px solid #f5c6cb;
   border-radius: 6px;
 }
-
 .error-icon {
   flex-shrink: 0;
 }
-
 .error-text {
   color: #721c24;
   font-size: 0.85rem;
   line-height: 1.4;
 }
-
 .step-timing {
   display: flex;
   gap: 1rem;
   margin-top: 0.5rem;
 }
-
 .timing-info {
   font-size: 0.8rem;
   color: #6c757d;
 }
-
 .step-connector {
   position: absolute;
   left: 2rem;
@@ -203,36 +198,51 @@
   background: #dee2e6;
   z-index: 1;
 }
-
 .step-connector.completed {
   background: #28a745;
 }
-
 .connector-line {
   width: 100%;
   height: 100%;
   background: inherit;
 }
-
 @media (max-width: 768px) {
   .workflow-step {
     flex-direction: column;
     text-align: center;
     gap: 0.75rem;
   }
-
   .step-header {
     flex-direction: column;
     gap: 0.5rem;
   }
-
   .step-timing {
     flex-direction: column;
     gap: 0.25rem;
     text-align: center;
   }
-
   .step-connector {
     display: none;
+  }
+}
+/* 减少动画效果以支持用户偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .workflow-step,
+  .step-icon,
+  .workflow-step.running .step-icon::after {
+    animation: none;
+    transition: none;
+  }
+}
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .workflow-step {
+    border-width: 3px;
+  }
+  .step-icon {
+    border-width: 3px;
+  }
+  .workflow-step.running .step-icon::after {
+    border-width: 3px;
   }
 }
