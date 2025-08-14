@@ -1,0 +1,155 @@
+.workflow-dashboard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.dashboard-title h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.session-info {
+  margin: 0.5rem 0 0 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.session-info code {
+  background: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #dee2e6;
+  background: white;
+  color: #495057;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.tab-button.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.tab-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 1rem;
+}
+
+.error-message {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.error-message h3 {
+  margin: 0 0 0.5rem 0;
+  color: #721c24;
+}
+
+.error-message p {
+  margin: 0;
+  color: #721c24;
+}
+
+.dashboard-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.overview-tab,
+.pipeline-tab,
+.logs-tab {
+  height: 100%;
+}
+
+.workflow-section {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.workflow-section:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .dashboard-tabs {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .tab-button {
+    flex: 1;
+    text-align: center;
+  }
+
+  .workflow-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+.status-placeholder {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6c757d;
+  font-style: italic;
+}
+.status-placeholder p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}

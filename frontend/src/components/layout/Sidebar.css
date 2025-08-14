@@ -1,0 +1,168 @@
+.sidebar {
+  width: 280px;
+  background: white;
+  border-right: 1px solid #dee2e6;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-nav {
+  padding: 1rem 0;
+}
+
+.nav-section {
+  margin-bottom: 2rem;
+}
+
+.nav-section-title {
+  padding: 0 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-list li {
+  margin-bottom: 0.25rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  color: #495057;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-right: 3px solid transparent;
+}
+
+.nav-link:hover {
+  background-color: #f8f9fa;
+  color: #007bff;
+}
+
+.nav-link.active {
+  background-color: #e3f2fd;
+  color: #007bff;
+  border-right-color: #007bff;
+  font-weight: 500;
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-text {
+  font-size: 0.9rem;
+}
+
+.workflow-summary {
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.workflow-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.status-text {
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.current-step {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.step-label {
+  font-weight: 500;
+}
+
+.step-name {
+  font-family: monospace;
+  background: #f8f9fa;
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+}
+
+.sessions-list {
+  padding: 0 1.5rem;
+}
+
+.no-sessions {
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.sessions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.session-item {
+  margin-bottom: 0.5rem;
+}
+
+.session-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  color: #495057;
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.session-link:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.session-id {
+  font-family: monospace;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    max-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .nav-section {
+    margin-bottom: 1rem;
+  }
+
+  .nav-link {
+    padding: 0.5rem 1rem;
+  }
+
+  .workflow-summary,
+  .sessions-list {
+    padding: 0 1rem;
+  }
+}
