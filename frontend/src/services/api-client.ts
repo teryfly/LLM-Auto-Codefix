@@ -1,6 +1,6 @@
 class APIClient {
   private baseURL: string;
-  constructor(baseURL: string = '/api/v1') {  // 使用相对路径，让代理处理
+  constructor(baseURL: string = 'http://192.168.120.238:8001/api/v1') {  // 使用完整 URL
     this.baseURL = baseURL;
   }
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

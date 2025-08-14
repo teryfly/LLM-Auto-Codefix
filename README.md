@@ -107,7 +107,7 @@ project_root/
       ai_work_dir: "/path/to/ai/workspace"
     services:
       grpc_port: "localhost:50051"
-      gitlab_url: "http://gitlab.example.com"
+      gitlab_url: "http://gitlab.micsun.cn"
       llm_url: "http://llm.example.com/v1"
       llm_model: "GPT-4.1"
     authentication:
