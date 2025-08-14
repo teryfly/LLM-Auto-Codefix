@@ -58,4 +58,93 @@ class WorkflowExecutor:
             started_at=datetime.utcnow()
         )
         self.bridge = WorkflowBridge(config)
-        self.
+        self.is_running = False
+        self.stop_requested = False
+        self.logs = []
+    async def execute(self):
+        """Execute the complete workflow"""
+        try:
+            self.is_running = True
+            self.workflow_state.status = "running"
+            self.add_log("Workflow execution started")
+            # Execute each step
+            await self._execute_step("prepare_project")
+            if self.stop_requested:
+                return
+            await self._execute_step("create_mr")
+            if self.stop_requested:
+                return
+            await self._execute_step("debug_loop")
+            if self.stop_requested:
+                return
+            await self._execute_step("merge_mr")
+            if self.stop_requested:
+                return
+            await self._execute_step("post_merge_monitor")
+            # Workflow completed successfully
+            self.workflow_state.status = "completed"
+            self.workflow_state.completed_at = datetime.utcnow()
+            self.add_log("Workflow completed successfully")
+        except Exception as e:
+            self.workflow_state.status = "failed"
+            self.workflow_state.error_message = str(e)
+            self.workflow_state.completed_at = datetime.utcnow()
+            self.add_log(f"Workflow failed: {e}")
+            logger.error(f"Workflow execution failed for session {self.session_id}: {e}", exc_info=True)
+        finally:
+            self.is_running = False
+    async def _execute_step(self, step_name: str):
+        """Execute a single workflow step"""
+        if self.stop_requested:
+            return
+        self.workflow_state.current_step = step_name
+        step = self.workflow_state.steps[step_name]
+        step.status = StepStatus.RUNNING
+        step.started_at = datetime.utcnow()
+        self.workflow_state.updated_at = datetime.utcnow()
+        self.add_log(f"Starting step: {step.display_name}")
+        try:
+            # Execute step using the bridge
+            result = await self.bridge.execute_step(step_name, self.workflow_state, self.request)
+            # Update workflow state with step result
+            if result and isinstance(result, dict):
+                if "project_info" in result:
+                    self.workflow_state.project_info = result["project_info"]
+                if "pipeline_info" in result:
+                    self.workflow_state.pipeline_info = result["pipeline_info"]
+                if "merge_request" in result:
+                    if not self.workflow_state.pipeline_info:
+                        self.workflow_state.pipeline_info = {}
+                    self.workflow_state.pipeline_info["merge_request"] = result["merge_request"]
+            step.status = StepStatus.COMPLETED
+            step.completed_at = datetime.utcnow()
+            self.add_log(f"Completed step: {step.display_name}")
+        except Exception as e:
+            step.status = StepStatus.FAILED
+            step.completed_at = datetime.utcnow()
+            step.error_message = str(e)
+            self.add_log(f"Step failed: {step.display_name} - {e}")
+            raise
+    def get_current_state(self) -> WorkflowState:
+        """Get current workflow state"""
+        return self.workflow_state
+    def stop(self, force: bool = False):
+        """Stop the workflow execution"""
+        self.stop_requested = True
+        self.add_log(f"Workflow stop requested (force={force})")
+        if force:
+            self.workflow_state.status = "cancelled"
+            self.workflow_state.completed_at = datetime.utcnow()
+    def is_completed(self) -> bool:
+        """Check if workflow is completed"""
+        return self.workflow_state.status in ["completed", "failed", "cancelled"]
+    def get_logs(self, offset: int = 0, limit: int = 100) -> list:
+        """Get workflow execution logs"""
+        return self.logs[offset:offset+limit]
+    def add_log(self, message: str):
+        """Add a log entry"""
+        timestamp = datetime.utcnow().isoformat()
+        log_entry = f"[{timestamp}] {message}"
+        self.logs.append(log_entry)
+        self.workflow_state.add_log(message)
+        logger.info(f"[{self.session_id}] {message}")

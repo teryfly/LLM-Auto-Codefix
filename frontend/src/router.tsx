@@ -4,7 +4,6 @@ import { Layout } from './components/layout/Layout';
 import { WorkflowDashboard } from './components/workflow/WorkflowDashboard';
 import { PipelineMonitor } from './components/pipeline/PipelineMonitor';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-
 const router = createBrowserRouter([
   {
     path: '/',
@@ -24,12 +23,14 @@ const router = createBrowserRouter([
         path: 'pipeline/:sessionId',
         element: <PipelineMonitor />,
       },
+      {
+        path: ':projectName/MR/:mrId',
+        element: <WorkflowDashboard />,
+      },
     ],
   },
 ]);
-
 export const AppRouter: React.FC = () => {
   return <RouterProvider router={router} />;
 };
-
 export default AppRouter;

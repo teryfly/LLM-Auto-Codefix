@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { WorkflowStepper } from './WorkflowStepper';
 import { WorkflowControls } from './WorkflowControls';
 import { WorkflowStatus } from './WorkflowStatus';
@@ -10,35 +10,75 @@ import { usePipeline } from '../../hooks/usePipeline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import './WorkflowDashboard.css';
 export const WorkflowDashboard: React.FC = () => {
-  const { sessionId } = useParams<{ sessionId: string }>();
+  const { sessionId, projectName, mrId } = useParams<{ 
+    sessionId: string; 
+    projectName: string; 
+    mrId: string; 
+  }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'pipeline' | 'logs'>('overview');
   const {
     workflowStatus,
     startWorkflow,
     stopWorkflow,
     isLoading: workflowLoading,
-    error: workflowError
+    error: workflowError,
+    currentSession
   } = useWorkflow(sessionId);
   const {
     pipelineStatus,
     jobStatuses,
     isLoading: pipelineLoading
   } = usePipeline(sessionId);
+  // 如果是MR路由，尝试从MR信息获取session
+  useEffect(() => {
+    if (projectName && mrId && !sessionId) {
+      // 这里可以添加逻辑通过MR ID查找对应的session
+      // 暂时显示MR信息
+      console.log(`Viewing MR ${mrId} for project ${projectName}`);
+    }
+  }, [projectName, mrId, sessionId]);
   const handleStartWorkflow = async (config: any) => {
     try {
-      await startWorkflow(config);
+      const response = await startWorkflow(config);
+      // 获取项目信息和MR信息，跳转到MR路由
+      if (response.session_id && config.project_name) {
+        // 等待一段时间让workflow创建MR
+        setTimeout(async () => {
+          try {
+            // 这里需要从workflow状态中获取MR ID
+            // 暂时使用session ID作为占位符
+            const projectNameForUrl = config.project_name.replace('/', '-');
+            navigate(`/${projectNameForUrl}/MR/${response.session_id}`);
+          } catch (error) {
+            console.error('Failed to navigate to MR route:', error);
+          }
+        }, 5000);
+      }
     } catch (error) {
       console.error('Failed to start workflow:', error);
     }
   };
   const handleStopWorkflow = async () => {
-    if (sessionId) {
+    if (sessionId || currentSession) {
       try {
-        await stopWorkflow(sessionId);
+        await stopWorkflow(sessionId || currentSession);
       } catch (error) {
         console.error('Failed to stop workflow:', error);
       }
     }
+  };
+  const getDisplayTitle = () => {
+    if (projectName && mrId) {
+      return `Project: ${projectName.replace('-', '/')} - MR: ${mrId}`;
+    }
+    if (sessionId) {
+      return `Session: ${sessionId}`;
+    }
+    return 'Workflow Dashboard';
+  };
+  const getCurrentSessionId = () => {
+    return sessionId || currentSession || (projectName && mrId ? mrId : null);
   };
   if (workflowLoading && !workflowStatus) {
     return (
@@ -48,14 +88,20 @@ export const WorkflowDashboard: React.FC = () => {
       </div>
     );
   }
+  const displaySessionId = getCurrentSessionId();
   return (
     <div className="workflow-dashboard">
       <div className="dashboard-header">
         <div className="dashboard-title">
-          <h2>Workflow Dashboard</h2>
-          {sessionId && (
+          <h2>{getDisplayTitle()}</h2>
+          {displaySessionId && (
             <p className="session-info">
-              Session: <code>{sessionId}</code>
+              Session: <code>{displaySessionId}</code>
+            </p>
+          )}
+          {projectName && mrId && (
+            <p className="mr-info">
+              MR ID: <code>{mrId}</code> | Project: <code>{projectName.replace('-', '/')}</code>
             </p>
           )}
         </div>
@@ -113,14 +159,14 @@ export const WorkflowDashboard: React.FC = () => {
             </div>
           </div>
         )}
-        {activeTab === 'pipeline' && sessionId && (
+        {activeTab === 'pipeline' && displaySessionId && (
           <div className="pipeline-tab">
-            <PipelineMonitor sessionId={sessionId} />
+            <PipelineMonitor sessionId={displaySessionId} />
           </div>
         )}
-        {activeTab === 'logs' && sessionId && (
+        {activeTab === 'logs' && displaySessionId && (
           <div className="logs-tab">
-            <LogViewer sessionId={sessionId} />
+            <LogViewer sessionId={displaySessionId} />
           </div>
         )}
       </div>

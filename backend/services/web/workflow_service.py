@@ -69,13 +69,22 @@ class WorkflowService:
                 )
             except Exception as e:
                 logger.warning(f"Failed to update session state: {e}")
+            # 增强pipeline_info以包含MR信息
+            enhanced_pipeline_info = current_state.pipeline_info or {}
+            if hasattr(executor, 'mr_info') and executor.mr_info:
+                enhanced_pipeline_info['merge_request'] = {
+                    'id': getattr(executor.mr_info, 'id', None),
+                    'iid': getattr(executor.mr_info, 'iid', None),
+                    'web_url': getattr(executor.mr_info, 'web_url', None),
+                    'title': getattr(executor.mr_info, 'title', None)
+                }
             return WorkflowStatusResponse(
                 session_id=session_id,
                 status=current_state.status,
                 current_step=current_state.current_step,
                 steps=current_state.steps,
                 project_info=current_state.project_info,
-                pipeline_info=current_state.pipeline_info,
+                pipeline_info=enhanced_pipeline_info,
                 error_message=current_state.error_message,
                 started_at=current_state.started_at,
                 updated_at=datetime.utcnow()

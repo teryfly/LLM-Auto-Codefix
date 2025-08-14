@@ -2,30 +2,34 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
 }
-
 .dashboard-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
 }
-
+.dashboard-title {
+  flex: 1;
+  min-width: 0;
+}
 .dashboard-title h2 {
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   color: #333;
   font-size: 1.5rem;
   font-weight: 600;
+  word-wrap: break-word;
 }
-
 .session-info {
   margin: 0.5rem 0 0 0;
   color: #6c757d;
   font-size: 0.9rem;
 }
-
 .session-info code {
   background: #f8f9fa;
   padding: 0.25rem 0.5rem;
@@ -33,12 +37,26 @@
   font-family: monospace;
   font-size: 0.8rem;
 }
-
+.mr-info {
+  margin: 0.5rem 0 0 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+.mr-info code {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  margin: 0 0.25rem;
+}
 .dashboard-tabs {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: 1rem;
 }
-
 .tab-button {
   padding: 0.5rem 1rem;
   border: 1px solid #dee2e6;
@@ -49,26 +67,23 @@
   font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
-
 .tab-button:hover:not(:disabled) {
   background: #f8f9fa;
   border-color: #007bff;
   color: #007bff;
 }
-
 .tab-button.active {
   background: #007bff;
   border-color: #007bff;
   color: white;
 }
-
 .tab-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: #f8f9fa;
 }
-
 .dashboard-loading {
   display: flex;
   flex-direction: column;
@@ -77,36 +92,34 @@
   height: 300px;
   gap: 1rem;
 }
-
 .error-message {
   background: #f8d7da;
   border: 1px solid #f5c6cb;
   border-radius: 6px;
   padding: 1rem;
   margin-bottom: 2rem;
+  flex-shrink: 0;
 }
-
 .error-message h3 {
   margin: 0 0 0.5rem 0;
   color: #721c24;
 }
-
 .error-message p {
   margin: 0;
   color: #721c24;
 }
-
 .dashboard-content {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
-
 .overview-tab,
 .pipeline-tab,
 .logs-tab {
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-
 .workflow-section {
   background: white;
   border: 1px solid #dee2e6;
@@ -115,31 +128,42 @@
   margin-bottom: 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
 .workflow-section:last-child {
   margin-bottom: 0;
 }
-
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-
   .dashboard-tabs {
     width: 100%;
     justify-content: stretch;
+    margin-left: 0;
   }
-
   .tab-button {
     flex: 1;
     text-align: center;
   }
-
   .workflow-section {
     padding: 1rem;
     margin-bottom: 1rem;
+  }
+  .dashboard-title h2 {
+    font-size: 1.25rem;
+  }
+}
+@media (max-width: 480px) {
+  .dashboard-tabs {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .tab-button {
+    padding: 0.75rem;
+  }
+  .mr-info {
+    word-break: break-all;
   }
 }
 .status-placeholder {

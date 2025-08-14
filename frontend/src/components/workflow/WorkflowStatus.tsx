@@ -12,7 +12,12 @@ interface WorkflowStatusData {
   };
   pipeline_info?: {
     pipeline_id?: number;
-    merge_request?: any;
+    merge_request?: {
+      id?: number;
+      iid?: number;
+      web_url?: string;
+      title?: string;
+    };
     deployment_url?: string;
   };
   error_message?: string;
@@ -26,7 +31,7 @@ interface PipelineStatusData {
   web_url?: string;
 }
 interface WorkflowStatusProps {
-  status?: WorkflowStatusData | null;  // 允许为 null
+  status?: WorkflowStatusData | null;
   pipelineStatus?: PipelineStatusData | null;
 }
 export const WorkflowStatus: React.FC<WorkflowStatusProps> = ({
@@ -158,7 +163,6 @@ export const WorkflowStatus: React.FC<WorkflowStatusProps> = ({
                     </span>
                   </div>
                 )}
-                Code View
                 {pipelineStatus?.ref && (
                   <div className="detail-item">
                     <span className="detail-label">Branch:</span>
@@ -191,6 +195,53 @@ export const WorkflowStatus: React.FC<WorkflowStatusProps> = ({
                         className="external-link deployment-link"
                       >
                         🚀 View Deployment
+                      </a>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {status.pipeline_info?.merge_request && (
+            <div className="status-card mr-info-card">
+              <h4>Merge Request Information</h4>
+              <div className="status-details">
+                <div className="detail-item">
+                  <span className="detail-label">MR ID:</span>
+                  <span className="detail-value">
+                    <code className="mr-id">{status.pipeline_info.merge_request.iid || status.pipeline_info.merge_request.id}</code>
+                  </span>
+                </div>
+                {status.pipeline_info.merge_request.title && (
+                  <div className="detail-item">
+                    <span className="detail-label">Title:</span>
+                    <span className="detail-value">{status.pipeline_info.merge_request.title}</span>
+                  </div>
+                )}
+                {status.pipeline_info.merge_request.web_url && (
+                  <div className="detail-item">
+                    <span className="detail-label">MR URL:</span>
+                    <span className="detail-value">
+                      <a 
+                        href={status.pipeline_info.merge_request.web_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="external-link mr-link"
+                      >
+                        View MR in GitLab 🔗
+                      </a>
+                    </span>
+                  </div>
+                )}
+                {status.project_info?.project_name && status.pipeline_info.merge_request.iid && (
+                  <div className="detail-item">
+                    <span className="detail-label">Direct Link:</span>
+                    <span className="detail-value">
+                      <a 
+                        href={`/${status.project_info.project_name.replace('/', '-')}/MR/${status.pipeline_info.merge_request.iid}`}
+                        className="external-link mr-direct-link"
+                      >
+                        📋 View in Dashboard
                       </a>
                     </span>
                   </div>

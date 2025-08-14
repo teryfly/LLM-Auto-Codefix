@@ -35,6 +35,7 @@ const App: React.FC = () => {
               <Route path="/" element={<WorkflowDashboard />} />
               <Route path="/workflow/:sessionId" element={<WorkflowDashboard />} />
               <Route path="/pipeline/:sessionId" element={<WorkflowDashboard />} />
+              <Route path="/:projectName/MR/:mrId" element={<WorkflowDashboard />} />
               <Route path="*" element={<WorkflowDashboard />} />
             </Routes>
           </Layout>
