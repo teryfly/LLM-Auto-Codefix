@@ -11,14 +11,16 @@ interface WorkflowStep {
   error_message?: string;
 }
 interface WorkflowStepperProps {
-  steps?: Record<string, WorkflowStep>;  // 添加可选标记
-  currentStep?: string;                  // 添加可选标记
-  status?: string;                       // 添加可选标记
+  steps?: Record<string, WorkflowStep>;
+  currentStep?: string;
+  status?: string;
+  isRecovered?: boolean;
 }
 export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
-  steps = {},      // 提供默认值
+  steps = {},
   currentStep = '',
-  status = 'unknown'
+  status = 'unknown',
+  isRecovered = false
 }) => {
   const stepOrder = [
     'prepare_project',
@@ -31,7 +33,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
   const defaultSteps: Record<string, WorkflowStep> = {
     prepare_project: {
       name: 'prepare_project',
-      display_name: '准备项目',
+      display_name: '项目准备和代码同步',
       status: 'pending',
       description: '项目准备和代码同步'
     },
@@ -86,16 +88,35 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
       isActive && 'active',
       isCompleted && 'completed',
       isFailed && 'failed',
-      isRunning && 'running'
+      isRunning && 'running',
+      isRecovered && 'recovered'
     ].filter(Boolean).join(' ');
   };
   return (
     <div className="workflow-stepper">
       <div className="stepper-header">
         <h3>Workflow Progress</h3>
-        <StatusBadge status={status} />
+        <div className="stepper-status">
+          <StatusBadge status={status} />
+          {isRecovered && (
+            <span className="recovery-indicator">
+              🔄 Recovered
+            </span>
+          )}
+        </div>
       </div>
       <div className="stepper-content">
+        {isRecovered && (
+          <div className="recovery-notice">
+            <div className="notice-content">
+              <span className="notice-icon">ℹ️</span>
+              <span className="notice-text">
+                Workflow status recovered from GitLab MR information. 
+                Steps will be checked sequentially to determine current progress.
+              </span>
+            </div>
+          </div>
+        )}
         <div className="steps-container">
           {stepOrder.map((stepName, index) => {
             const step = workflowSteps[stepName];
@@ -138,6 +159,11 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                       {step.completed_at && (
                         <span className="timing-info">
                           Completed: {new Date(step.completed_at).toLocaleTimeString()}
+                        </span>
+                      )}
+                      {isRecovered && step.status === 'running' && (
+                        <span className="timing-info recovery-status">
+                          🔍 Checking status...
                         </span>
                       )}
                     </div>

@@ -2,12 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 import sys
 from pathlib import Path
-
 # Add src to path
 project_root = Path(__file__).parent.parent.parent.parent
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
-
 from models.web.api_models import (
     WorkflowStartRequest,
     WorkflowStartResponse,
@@ -17,9 +15,7 @@ from models.web.api_models import (
 from services.web.workflow_service import WorkflowService
 from services.web.session_service import SessionService
 from ..core.dependencies import get_workflow_service, get_session_service
-
 router = APIRouter()
-
 @router.post("/workflow/start", response_model=WorkflowStartResponse)
 async def start_workflow(
     request: WorkflowStartRequest,
@@ -40,7 +36,6 @@ async def start_workflow(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to start workflow: {str(e)}"
         )
-
 @router.get("/workflow/status/{session_id}", response_model=WorkflowStatusResponse)
 async def get_workflow_status(
     session_id: str,
@@ -55,7 +50,23 @@ async def get_workflow_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Session not found or error: {str(e)}"
         )
-
+@router.get("/workflow/mr/{project_name}/{mr_id}", response_model=WorkflowStatusResponse)
+async def get_workflow_status_by_mr(
+    project_name: str,
+    mr_id: str,
+    workflow_service: WorkflowService = Depends(get_workflow_service)
+):
+    """Get workflow status by MR ID"""
+    try:
+        # 将URL中的连字符转换回斜杠
+        actual_project_name = project_name.replace('-', '/')
+        status_info = workflow_service.get_workflow_status_by_mr(actual_project_name, mr_id)
+        return status_info
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Workflow not found for MR {mr_id}: {str(e)}"
+        )
 @router.post("/workflow/stop/{session_id}")
 async def stop_workflow(
     session_id: str,
@@ -71,17 +82,14 @@ async def stop_workflow(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to stop workflow: {str(e)}"
         )
-
 @router.get("/workflow/logs/{session_id}")
 async def get_workflow_logs(
     session_id: str,
-    offset: int = 0,
-    limit: int = 100,
     workflow_service: WorkflowService = Depends(get_workflow_service)
 ):
     """Get workflow execution logs"""
     try:
-        logs = workflow_service.get_workflow_logs(session_id, offset, limit)
+        logs = workflow_service.get_workflow_logs(session_id)
         return {"logs": logs}
     except Exception as e:
         raise HTTPException(

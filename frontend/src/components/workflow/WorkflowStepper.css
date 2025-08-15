@@ -16,8 +16,44 @@
   font-size: 1.25rem;
   font-weight: 600;
 }
+.stepper-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.recovery-indicator {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #ffeaa7;
+}
 .stepper-content {
   position: relative;
+}
+.recovery-notice {
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+.notice-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.notice-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.notice-text {
+  color: #1976d2;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 .steps-container {
   display: flex;
@@ -53,6 +89,24 @@
 .workflow-step.running {
   border-color: #007bff;
   background: #e3f2fd;
+}
+.workflow-step.recovered {
+  position: relative;
+  overflow: hidden;
+}
+.workflow-step.recovered::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.3), transparent);
+  animation: recovery-shimmer 3s infinite;
+}
+@keyframes recovery-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 .step-indicator {
   display: flex;
@@ -184,10 +238,18 @@
   display: flex;
   gap: 1rem;
   margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
 .timing-info {
   font-size: 0.8rem;
   color: #6c757d;
+}
+.recovery-status {
+  color: #856404;
+  background: #fff3cd;
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  font-weight: 500;
 }
 .step-connector {
   position: absolute;
@@ -224,12 +286,25 @@
   .step-connector {
     display: none;
   }
+  .stepper-status {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .recovery-notice {
+    padding: 0.75rem;
+  }
+  .notice-content {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
 }
 /* 减少动画效果以支持用户偏好 */
 @media (prefers-reduced-motion: reduce) {
   .workflow-step,
   .step-icon,
-  .workflow-step.running .step-icon::after {
+  .workflow-step.running .step-icon::after,
+  .workflow-step.recovered::before {
     animation: none;
     transition: none;
   }

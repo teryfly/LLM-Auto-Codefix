@@ -33,10 +33,12 @@ interface PipelineStatusData {
 interface WorkflowStatusProps {
   status?: WorkflowStatusData | null;
   pipelineStatus?: PipelineStatusData | null;
+  isRecovered?: boolean;
 }
 export const WorkflowStatus: React.FC<WorkflowStatusProps> = ({
   status = null,
-  pipelineStatus = null
+  pipelineStatus = null,
+  isRecovered = false
 }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -76,11 +78,30 @@ export const WorkflowStatus: React.FC<WorkflowStatusProps> = ({
     );
   }
   return (
-    <div className="workflow-status">
+    <div className={`workflow-status ${isRecovered ? 'recovered-status' : ''}`}>
       <div className="status-header">
         <h3>Workflow Status</h3>
-        <StatusBadge status={status.status || 'unknown'} />
+        <div className="status-badges">
+          <StatusBadge status={status.status || 'unknown'} />
+          {isRecovered && (
+            <span className="recovery-status-badge">
+              🔄 Recovered
+            </span>
+          )}
+        </div>
       </div>
+      {isRecovered && (
+        <div className="recovery-notice-status">
+          <div className="notice-content">
+            <span className="notice-icon">🔍</span>
+            <div className="notice-text">
+              <strong>Status Recovery Mode:</strong> This workflow status has been recovered 
+              from GitLab MR information. The system is actively checking each step's progress 
+              to provide real-time updates.
+            </div>
+          </div>
+        </div>
+      )}
       <div className="status-content">
         <div className="status-grid">
           <div className="status-card">
@@ -97,6 +118,7 @@ export const WorkflowStatus: React.FC<WorkflowStatusProps> = ({
                 <span className="detail-value">
                   <StatusBadge status={status.status || 'unknown'} size="small" />
                   {status.status || 'Unknown'}
+                  {isRecovered && <span className="recovery-suffix"> (Recovered)</span>}
                 </span>
               </div>
               <div className="detail-item">

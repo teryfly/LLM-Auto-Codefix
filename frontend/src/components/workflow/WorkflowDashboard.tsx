@@ -6,6 +6,7 @@ import { WorkflowStatus } from './WorkflowStatus';
 import { PipelineMonitor } from '../pipeline/PipelineMonitor';
 import { LogViewer } from '../pipeline/LogViewer';
 import { useWorkflow } from '../../hooks/useWorkflow';
+import { useMRWorkflow } from '../../hooks/useMRWorkflow';
 import { usePipeline } from '../../hooks/usePipeline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import './WorkflowDashboard.css';
@@ -17,52 +18,63 @@ export const WorkflowDashboard: React.FC = () => {
   }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'pipeline' | 'logs'>('overview');
+  // 根据路由类型选择不同的hook
+  const isMRRoute = projectName && mrId;
+  // 普通workflow hook
   const {
-    workflowStatus,
+    workflowStatus: normalWorkflowStatus,
     startWorkflow,
     stopWorkflow,
-    isLoading: workflowLoading,
-    error: workflowError,
+    isLoading: normalWorkflowLoading,
+    error: normalWorkflowError,
     currentSession
-  } = useWorkflow(sessionId);
+  } = useWorkflow(isMRRoute ? undefined : sessionId);
+  // MR恢复workflow hook
+  const {
+    workflowStatus: mrWorkflowStatus,
+    isLoading: mrWorkflowLoading,
+    error: mrWorkflowError,
+    isRecovered,
+    refreshStatus
+  } = useMRWorkflow(isMRRoute ? projectName : undefined, isMRRoute ? mrId : undefined);
+  // 选择使用哪个状态
+  const workflowStatus = isMRRoute ? mrWorkflowStatus : normalWorkflowStatus;
+  const isLoading = isMRRoute ? mrWorkflowLoading : normalWorkflowLoading;
+  const workflowError = isMRRoute ? mrWorkflowError : normalWorkflowError;
   const {
     pipelineStatus,
     jobStatuses,
     isLoading: pipelineLoading
-  } = usePipeline(sessionId);
-  // 如果是MR路由，尝试从MR信息获取session
-  useEffect(() => {
-    if (projectName && mrId && !sessionId) {
-      // 这里可以添加逻辑通过MR ID查找对应的session
-      // 暂时显示MR信息
-      console.log(`Viewing MR ${mrId} for project ${projectName}`);
-    }
-  }, [projectName, mrId, sessionId]);
+  } = usePipeline(sessionId || (isMRRoute ? `mr-${projectName}-${mrId}` : undefined));
   const handleStartWorkflow = async (config: any) => {
     try {
       const response = await startWorkflow(config);
-      // 获取项目信息和MR信息，跳转到MR路由
+      // 等待workflow创建MR后跳转
       if (response.session_id && config.project_name) {
-        // 等待一段时间让workflow创建MR
         setTimeout(async () => {
           try {
-            // 这里需要从workflow状态中获取MR ID
-            // 暂时使用session ID作为占位符
-            const projectNameForUrl = config.project_name.replace('/', '-');
-            navigate(`/${projectNameForUrl}/MR/${response.session_id}`);
+            // 获取workflow状态以获取MR信息
+            const status = await fetch(`/api/v1/workflow/status/${response.session_id}`);
+            const statusData = await status.json();
+            if (statusData.pipeline_info?.merge_request?.iid) {
+              const projectNameForUrl = config.project_name.replace('/', '-');
+              const mrIid = statusData.pipeline_info.merge_request.iid;
+              navigate(`/${projectNameForUrl}/MR/${mrIid}`);
+            }
           } catch (error) {
             console.error('Failed to navigate to MR route:', error);
           }
-        }, 5000);
+        }, 10000); // 等待10秒让MR创建完成
       }
     } catch (error) {
       console.error('Failed to start workflow:', error);
     }
   };
   const handleStopWorkflow = async () => {
-    if (sessionId || currentSession) {
+    const targetSessionId = sessionId || currentSession;
+    if (targetSessionId) {
       try {
-        await stopWorkflow(sessionId || currentSession);
+        await stopWorkflow(targetSessionId);
       } catch (error) {
         console.error('Failed to stop workflow:', error);
       }
@@ -78,9 +90,12 @@ export const WorkflowDashboard: React.FC = () => {
     return 'Workflow Dashboard';
   };
   const getCurrentSessionId = () => {
-    return sessionId || currentSession || (projectName && mrId ? mrId : null);
+    if (isMRRoute) {
+      return workflowStatus?.session_id || `mr-${projectName}-${mrId}`;
+    }
+    return sessionId || currentSession || null;
   };
-  if (workflowLoading && !workflowStatus) {
+  if (isLoading && !workflowStatus) {
     return (
       <div className="dashboard-loading">
         <LoadingSpinner />
@@ -100,9 +115,17 @@ export const WorkflowDashboard: React.FC = () => {
             </p>
           )}
           {projectName && mrId && (
-            <p className="mr-info">
-              MR ID: <code>{mrId}</code> | Project: <code>{projectName.replace('-', '/')}</code>
-            </p>
+            <div className="mr-route-info">
+              <p className="mr-info">
+                MR ID: <code>{mrId}</code> | Project: <code>{projectName.replace('-', '/')}</code>
+              </p>
+              {isRecovered && (
+                <p className="recovery-info">
+                  <span className="recovery-badge">🔄 Status Recovered</span>
+                  Workflow status recovered from GitLab MR information
+                </p>
+              )}
+            </div>
           )}
         </div>
         <div className="dashboard-tabs">
@@ -131,30 +154,39 @@ export const WorkflowDashboard: React.FC = () => {
         <div className="error-message">
           <h3>Error</h3>
           <p>{workflowError}</p>
+          {isMRRoute && (
+            <button onClick={refreshStatus} className="btn btn-secondary btn-small">
+              🔄 Retry Recovery
+            </button>
+          )}
         </div>
       )}
       <div className="dashboard-content">
         {activeTab === 'overview' && (
           <div className="overview-tab">
-            <div className="workflow-section">
-              <WorkflowControls
-                onStart={handleStartWorkflow}
-                onStop={handleStopWorkflow}
-                isRunning={workflowStatus?.status === 'running'}
-                disabled={workflowLoading}
-              />
-            </div>
+            {!isMRRoute && (
+              <div className="workflow-section">
+                <WorkflowControls
+                  onStart={handleStartWorkflow}
+                  onStop={handleStopWorkflow}
+                  isRunning={workflowStatus?.status === 'running'}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
             <div className="workflow-section">
               <WorkflowStepper
                 steps={workflowStatus?.steps}
                 currentStep={workflowStatus?.current_step}
                 status={workflowStatus?.status}
+                isRecovered={isRecovered}
               />
             </div>
             <div className="workflow-section">
               <WorkflowStatus
                 status={workflowStatus}
                 pipelineStatus={pipelineStatus}
+                isRecovered={isRecovered}
               />
             </div>
           </div>
