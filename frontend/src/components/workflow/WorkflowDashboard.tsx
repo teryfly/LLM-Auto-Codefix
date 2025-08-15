@@ -35,6 +35,9 @@ export const WorkflowDashboard: React.FC = () => {
     isLoading: mrWorkflowLoading,
     error: mrWorkflowError,
     isRecovered,
+    stepErrors,
+    shouldStopPolling,
+    mrExists,
     refreshStatus
   } = useMRWorkflow(isMRRoute ? projectName : undefined, isMRRoute ? mrId : undefined);
   // 选择使用哪个状态
@@ -95,17 +98,38 @@ export const WorkflowDashboard: React.FC = () => {
     }
     return sessionId || currentSession || null;
   };
+  const getStatusMessage = () => {
+    if (isMRRoute && mrExists === false) {
+      return `MR ${mrId} not found in project ${projectName?.replace('-', '/')}`;
+    }
+    if (shouldStopPolling && workflowStatus?.status === 'completed') {
+      return 'Workflow completed successfully';
+    }
+    if (shouldStopPolling && workflowStatus?.status === 'failed') {
+      return 'Workflow failed - polling stopped';
+    }
+    if (isRecovered) {
+      return 'Status recovered from GitLab MR information';
+    }
+    return null;
+  };
   if (isLoading && !workflowStatus) {
     return (
       <div className="dashboard-loading">
         <LoadingSpinner />
-        <p>Loading workflow dashboard...</p>
+        <p>
+          {isMRRoute ? 
+            `Validating MR ${mrId} and loading workflow status...` : 
+            'Loading workflow dashboard...'
+          }
+        </p>
       </div>
     );
   }
   const displaySessionId = getCurrentSessionId();
+  const statusMessage = getStatusMessage();
   return (
-    <div className="workflow-dashboard">
+    <div className={`workflow-dashboard ${isMRRoute ? 'mr-route-dashboard' : ''} ${mrExists === false ? 'error-state' : ''}`}>
       <div className="dashboard-header">
         <div className="dashboard-title">
           <h2>{getDisplayTitle()}</h2>
@@ -119,10 +143,15 @@ export const WorkflowDashboard: React.FC = () => {
               <p className="mr-info">
                 MR ID: <code>{mrId}</code> | Project: <code>{projectName.replace('-', '/')}</code>
               </p>
-              {isRecovered && (
-                <p className="recovery-info">
-                  <span className="recovery-badge">🔄 Status Recovered</span>
-                  Workflow status recovered from GitLab MR information
+              {statusMessage && (
+                <p className={`status-message ${mrExists === false ? 'error-info' : isRecovered ? 'recovery-info' : shouldStopPolling ? 'completion-info' : ''}`}>
+                  <span className={`status-badge ${mrExists === false ? 'error-badge' : isRecovered ? 'recovery-badge' : shouldStopPolling ? 'completion-badge' : ''}`}>
+                    {mrExists === false ? '❌ Not Found' : 
+                     shouldStopPolling && workflowStatus?.status === 'completed' ? '✅ Completed' :
+                     shouldStopPolling && workflowStatus?.status === 'failed' ? '❌ Failed' :
+                     isRecovered ? '🔄 Recovered' : ''}
+                  </span>
+                  {statusMessage}
                 </p>
               )}
             </div>
@@ -138,7 +167,7 @@ export const WorkflowDashboard: React.FC = () => {
           <button
             className={`tab-button ${activeTab === 'pipeline' ? 'active' : ''}`}
             onClick={() => setActiveTab('pipeline')}
-            disabled={!pipelineStatus}
+            disabled={!pipelineStatus && !isMRRoute}
           >
             Pipeline
           </button>
@@ -155,10 +184,38 @@ export const WorkflowDashboard: React.FC = () => {
           <h3>Error</h3>
           <p>{workflowError}</p>
           {isMRRoute && (
-            <button onClick={refreshStatus} className="btn btn-secondary btn-small">
-              🔄 Retry Recovery
-            </button>
+            <div className="error-actions">
+              <button onClick={refreshStatus} className="btn btn-secondary btn-small">
+                🔄 Retry Validation
+              </button>
+              {mrExists === false && (
+                <p className="error-suggestion">
+                  Please check if the MR ID <strong>{mrId}</strong> exists in project <strong>{projectName?.replace('-', '/')}</strong>.
+                  You can verify this in GitLab directly.
+                </p>
+              )}
+            </div>
           )}
+        </div>
+      )}
+      {shouldStopPolling && (
+        <div className={`polling-status ${workflowStatus?.status === 'completed' ? 'success' : 'warning'}`}>
+          <div className="polling-status-content">
+            <span className="polling-icon">
+              {workflowStatus?.status === 'completed' ? '✅' : '⏹️'}
+            </span>
+            <span className="polling-text">
+              {workflowStatus?.status === 'completed' ? 
+                'Workflow completed - automatic status updates stopped' :
+                'Status polling stopped due to error or completion'
+              }
+            </span>
+            {isMRRoute && (
+              <button onClick={refreshStatus} className="btn btn-secondary btn-small">
+                🔄 Resume Monitoring
+              </button>
+            )}
+          </div>
         </div>
       )}
       <div className="dashboard-content">
@@ -171,15 +228,19 @@ export const WorkflowDashboard: React.FC = () => {
                   onStop={handleStopWorkflow}
                   isRunning={workflowStatus?.status === 'running'}
                   disabled={isLoading}
+                  workflowStatus={workflowStatus}
                 />
               </div>
             )}
-            <div className="workflow-section">
+            <div className={`workflow-section ${mrExists === false ? 'error-state' : ''}`}>
               <WorkflowStepper
                 steps={workflowStatus?.steps}
                 currentStep={workflowStatus?.current_step}
                 status={workflowStatus?.status}
                 isRecovered={isRecovered}
+                stepErrors={stepErrors}
+                mrExists={mrExists}
+                shouldStopPolling={shouldStopPolling}
               />
             </div>
             <div className="workflow-section">
@@ -187,6 +248,8 @@ export const WorkflowDashboard: React.FC = () => {
                 status={workflowStatus}
                 pipelineStatus={pipelineStatus}
                 isRecovered={isRecovered}
+                mrExists={mrExists}
+                shouldStopPolling={shouldStopPolling}
               />
             </div>
           </div>

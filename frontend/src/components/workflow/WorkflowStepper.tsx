@@ -15,12 +15,18 @@ interface WorkflowStepperProps {
   currentStep?: string;
   status?: string;
   isRecovered?: boolean;
+  stepErrors?: Record<string, string>;
+  mrExists?: boolean | null;
+  shouldStopPolling?: boolean;
 }
 export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
   steps = {},
   currentStep = '',
   status = 'unknown',
-  isRecovered = false
+  isRecovered = false,
+  stepErrors = {},
+  mrExists = null,
+  shouldStopPolling = false
 }) => {
   const stepOrder = [
     'prepare_project',
@@ -83,14 +89,35 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
     const isCompleted = step.status === 'completed';
     const isFailed = step.status === 'failed';
     const isRunning = step.status === 'running';
+    const hasError = stepErrors[stepName] || step.error_message;
     return [
       'workflow-step',
       isActive && 'active',
       isCompleted && 'completed',
       isFailed && 'failed',
       isRunning && 'running',
-      isRecovered && 'recovered'
+      isRecovered && 'recovered',
+      hasError && 'has-error',
+      mrExists === false && 'mr-not-found'
     ].filter(Boolean).join(' ');
+  };
+  const getPollingStatusText = () => {
+    if (mrExists === false) {
+      return 'MR validation failed - status checking stopped';
+    }
+    if (shouldStopPolling && status === 'completed') {
+      return 'All steps completed - monitoring stopped';
+    }
+    if (shouldStopPolling && status === 'failed') {
+      return 'Workflow failed - monitoring stopped';
+    }
+    if (shouldStopPolling) {
+      return 'Status monitoring stopped';
+    }
+    if (isRecovered) {
+      return 'Steps will be checked sequentially to determine current progress';
+    }
+    return null;
   };
   return (
     <div className="workflow-stepper">
@@ -103,16 +130,27 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
               🔄 Recovered
             </span>
           )}
+          {shouldStopPolling && (
+            <span className="polling-indicator stopped">
+              ⏹️ Stopped
+            </span>
+          )}
+          {mrExists === false && (
+            <span className="validation-indicator failed">
+              ❌ MR Not Found
+            </span>
+          )}
         </div>
       </div>
       <div className="stepper-content">
-        {isRecovered && (
-          <div className="recovery-notice">
+        {(isRecovered || shouldStopPolling || mrExists === false) && (
+          <div className={`status-notice ${mrExists === false ? 'error-notice' : shouldStopPolling ? 'completion-notice' : 'recovery-notice'}`}>
             <div className="notice-content">
-              <span className="notice-icon">ℹ️</span>
+              <span className="notice-icon">
+                {mrExists === false ? '❌' : shouldStopPolling ? '⏹️' : 'ℹ️'}
+              </span>
               <span className="notice-text">
-                Workflow status recovered from GitLab MR information. 
-                Steps will be checked sequentially to determine current progress.
+                {getPollingStatusText()}
               </span>
             </div>
           </div>
@@ -127,6 +165,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
             }
             const isActive = stepName === currentStep;
             const isLast = index === stepOrder.length - 1;
+            const stepError = stepErrors[stepName] || step.error_message;
             return (
               <div key={stepName} className="step-wrapper">
                 <div className={getStepClass(step, stepName)}>
@@ -144,10 +183,10 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                     {step.description && (
                       <p className="step-description">{step.description}</p>
                     )}
-                    {step.error_message && (
+                    {stepError && (
                       <div className="step-error">
                         <span className="error-icon">⚠️</span>
-                        <span className="error-text">{step.error_message}</span>
+                        <span className="error-text">{stepError}</span>
                       </div>
                     )}
                     <div className="step-timing">
@@ -161,9 +200,24 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({
                           Completed: {new Date(step.completed_at).toLocaleTimeString()}
                         </span>
                       )}
-                      {isRecovered && step.status === 'running' && (
+                      {isRecovered && step.status === 'running' && !shouldStopPolling && (
                         <span className="timing-info recovery-status">
                           🔍 Checking status...
+                        </span>
+                      )}
+                      {isRecovered && step.status === 'failed' && stepError && (
+                        <span className="timing-info error-status">
+                          ❌ Check failed
+                        </span>
+                      )}
+                      {shouldStopPolling && step.status === 'running' && (
+                        <span className="timing-info stopped-status">
+                          ⏹️ Monitoring stopped
+                        </span>
+                      )}
+                      {mrExists === false && stepName === 'prepare_project' && (
+                        <span className="timing-info validation-failed-status">
+                          ❌ MR validation failed
                         </span>
                       )}
                     </div>

@@ -20,6 +20,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 .recovery-indicator {
   background: #fff3cd;
@@ -30,15 +31,43 @@
   font-weight: 600;
   border: 1px solid #ffeaa7;
 }
+.polling-indicator.stopped {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #f5c6cb;
+}
+.validation-indicator.failed {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #f5c6cb;
+}
 .stepper-content {
   position: relative;
+}
+.status-notice {
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
 }
 .recovery-notice {
   background: #e3f2fd;
   border: 1px solid #bbdefb;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+}
+.completion-notice {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+.error-notice {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
 }
 .notice-content {
   display: flex;
@@ -51,9 +80,17 @@
   margin-top: 0.1rem;
 }
 .notice-text {
-  color: #1976d2;
   font-size: 0.9rem;
   line-height: 1.5;
+}
+.recovery-notice .notice-text {
+  color: #1976d2;
+}
+.completion-notice .notice-text {
+  color: #155724;
+}
+.error-notice .notice-text {
+  color: #721c24;
 }
 .steps-container {
   display: flex;
@@ -93,6 +130,16 @@
 .workflow-step.recovered {
   position: relative;
   overflow: hidden;
+}
+.workflow-step.has-error {
+  border-color: #dc3545;
+  background: #f8d7da;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+.workflow-step.mr-not-found {
+  border-color: #dc3545;
+  background: #f8d7da;
+  opacity: 0.8;
 }
 .workflow-step.recovered::before {
   content: '';
@@ -137,7 +184,9 @@
   background: #28a745;
   color: white;
 }
-.workflow-step.failed .step-icon {
+.workflow-step.failed .step-icon,
+.workflow-step.has-error .step-icon,
+.workflow-step.mr-not-found .step-icon {
   border-color: #dc3545;
   background: #dc3545;
   color: white;
@@ -186,7 +235,9 @@
   background: #28a745;
   color: white;
 }
-.workflow-step.failed .step-number {
+.workflow-step.failed .step-number,
+.workflow-step.has-error .step-number,
+.workflow-step.mr-not-found .step-number {
   background: #dc3545;
   color: white;
 }
@@ -218,7 +269,7 @@
 }
 .step-error {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   margin: 0.75rem 0;
   padding: 0.75rem;
@@ -228,11 +279,13 @@
 }
 .error-icon {
   flex-shrink: 0;
+  font-size: 1rem;
 }
 .error-text {
   color: #721c24;
   font-size: 0.85rem;
   line-height: 1.4;
+  word-break: break-word;
 }
 .step-timing {
   display: flex;
@@ -247,6 +300,27 @@
 .recovery-status {
   color: #856404;
   background: #fff3cd;
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.error-status {
+  color: #721c24;
+  background: #f8d7da;
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.stopped-status {
+  color: #6c757d;
+  background: #e9ecef;
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.validation-failed-status {
+  color: #721c24;
+  background: #f8d7da;
   padding: 0.125rem 0.5rem;
   border-radius: 8px;
   font-weight: 500;
@@ -290,10 +364,15 @@
     flex-direction: column;
     gap: 0.5rem;
   }
-  .recovery-notice {
+  .status-notice {
     padding: 0.75rem;
   }
   .notice-content {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  .step-error {
     flex-direction: column;
     gap: 0.5rem;
     text-align: center;
@@ -319,5 +398,8 @@
   }
   .workflow-step.running .step-icon::after {
     border-width: 3px;
+  }
+  .step-error {
+    border-width: 2px;
   }
 }
