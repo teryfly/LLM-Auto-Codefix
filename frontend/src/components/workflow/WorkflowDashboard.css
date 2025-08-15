@@ -71,6 +71,24 @@
   font-weight: 600;
   border: 1px solid #ffeaa7;
 }
+.error-badge {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #f5c6cb;
+}
+.completion-badge {
+  background: #d4edda;
+  color: #155724;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #c3e6cb;
+}
 .dashboard-tabs {
   display: flex;
   gap: 0.5rem;
@@ -131,6 +149,34 @@
 .error-message .btn {
   margin-top: 0.5rem;
 }
+.polling-status {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  flex-shrink: 0;
+}
+.polling-status.success {
+  background: #d4edda;
+  border-color: #c3e6cb;
+}
+.polling-status.warning {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+}
+.polling-status-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.polling-icon {
+  font-size: 1.2rem;
+}
+.polling-text {
+  flex: 1;
+  font-weight: 500;
+}
 .dashboard-content {
   flex: 1;
   overflow-y: auto;
@@ -153,6 +199,99 @@
 }
 .workflow-section:last-child {
   margin-bottom: 0;
+}
+/* MR Pipeline Monitor Styles */
+.mr-pipeline-monitor {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+.mr-pipeline-monitor h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.pipeline-info {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+.pipeline-info p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.pipeline-info strong {
+  color: #495057;
+  margin-right: 0.5rem;
+}
+.pipeline-info a {
+  color: #007bff;
+  text-decoration: none;
+  margin-left: 0.5rem;
+}
+.pipeline-info a:hover {
+  text-decoration: underline;
+}
+.jobs-list h4 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+.job-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+.job-card:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.job-card.success {
+  border-left: 4px solid #28a745;
+}
+.job-card.failed {
+  border-left: 4px solid #dc3545;
+}
+.job-card.running {
+  border-left: 4px solid #007bff;
+}
+.job-card.pending {
+  border-left: 4px solid #ffc107;
+}
+.job-card h5 {
+  margin: 0 0 0.75rem 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.job-card p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+.job-card strong {
+  color: #495057;
+}
+.job-card a {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  display: inline-block;
+}
+.job-card a:hover {
+  text-decoration: underline;
 }
 @media (max-width: 768px) {
   .dashboard-header {
@@ -181,6 +320,14 @@
     align-items: flex-start;
     gap: 0.25rem;
   }
+  .jobs-grid {
+    grid-template-columns: 1fr;
+  }
+  .polling-status-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
 }
 @media (max-width: 480px) {
   .dashboard-tabs {
@@ -193,7 +340,9 @@
   .mr-info {
     word-break: break-all;
   }
-  .recovery-badge {
+  .recovery-badge,
+  .error-badge,
+  .completion-badge {
     font-size: 0.7rem;
     padding: 0.2rem 0.5rem;
   }
@@ -216,48 +365,28 @@
 .mr-route-dashboard .dashboard-title h2 {
   color: #1976d2;
 }
-/* 恢复状态指示器 */
-.recovery-indicator-global {
-  position: fixed;
-  top: 20px;
-  right: 20px;
+/* 错误状态样式 */
+.error-state {
+  opacity: 0.8;
+}
+.error-info {
+  color: #721c24;
+}
+.completion-info {
+  color: #155724;
+}
+.error-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.error-suggestion {
+  margin: 0;
+  padding: 0.75rem;
   background: #fff3cd;
-  color: #856404;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
   border: 1px solid #ffeaa7;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  animation: recovery-pulse 2s infinite;
-}
-@keyframes recovery-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .workflow-dashboard {
-    background: #1e1e1e;
-    color: #ffffff;
-  }
-  .dashboard-header {
-    border-bottom-color: #444444;
-  }
-  .workflow-section {
-    background: #2d2d2d;
-    border-color: #444444;
-    color: #ffffff;
-  }
-  .tab-button {
-    background: #2d2d2d;
-    border-color: #444444;
-    color: #ffffff;
-  }
-  .tab-button:hover:not(:disabled) {
-    background: #3d3d3d;
-  }
-  .recovery-badge {
-    background: #3d3d3d;
-    border-color: #555555;
-  }
+  border-radius: 4px;
+  color: #856404;
+  font-size: 0.9rem;
 }

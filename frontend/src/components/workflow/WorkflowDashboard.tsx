@@ -32,6 +32,7 @@ export const WorkflowDashboard: React.FC = () => {
   // MR恢复workflow hook
   const {
     workflowStatus: mrWorkflowStatus,
+    ciStatus,
     isLoading: mrWorkflowLoading,
     error: mrWorkflowError,
     isRecovered,
@@ -44,11 +45,24 @@ export const WorkflowDashboard: React.FC = () => {
   const workflowStatus = isMRRoute ? mrWorkflowStatus : normalWorkflowStatus;
   const isLoading = isMRRoute ? mrWorkflowLoading : normalWorkflowLoading;
   const workflowError = isMRRoute ? mrWorkflowError : normalWorkflowError;
+  // 为Pipeline监控确定session ID
+  const pipelineSessionId = sessionId || (isMRRoute ? `mr-${projectName}-${mrId}` : undefined);
   const {
     pipelineStatus,
     jobStatuses,
     isLoading: pipelineLoading
-  } = usePipeline(sessionId || (isMRRoute ? `mr-${projectName}-${mrId}` : undefined));
+  } = usePipeline(pipelineSessionId);
+  // 遇到错误时停止轮询
+  useEffect(() => {
+    if (workflowError && isMRRoute) {
+      console.log('Error detected, stopping polling');
+      // 通过刷新状态来停止轮询
+      if (refreshStatus) {
+        // 设置一个标志来停止轮询，而不是继续刷新
+        // 这里我们不调用refreshStatus，让shouldStopPolling生效
+      }
+    }
+  }, [workflowError, isMRRoute, refreshStatus]);
   const handleStartWorkflow = async (config: any) => {
     try {
       const response = await startWorkflow(config);
@@ -108,10 +122,20 @@ export const WorkflowDashboard: React.FC = () => {
     if (shouldStopPolling && workflowStatus?.status === 'failed') {
       return 'Workflow failed - polling stopped';
     }
+    if (workflowError) {
+      return 'Error occurred - polling stopped';
+    }
     if (isRecovered) {
       return 'Status recovered from GitLab MR information';
     }
     return null;
+  };
+  // 检查是否有Pipeline数据可显示
+  const hasPipelineData = () => {
+    if (isMRRoute && ciStatus) {
+      return ciStatus.pipeline || ciStatus.jobs.length > 0;
+    }
+    return pipelineStatus || jobStatuses.length > 0;
   };
   if (isLoading && !workflowStatus) {
     return (
@@ -144,11 +168,16 @@ export const WorkflowDashboard: React.FC = () => {
                 MR ID: <code>{mrId}</code> | Project: <code>{projectName.replace('-', '/')}</code>
               </p>
               {statusMessage && (
-                <p className={`status-message ${mrExists === false ? 'error-info' : isRecovered ? 'recovery-info' : shouldStopPolling ? 'completion-info' : ''}`}>
-                  <span className={`status-badge ${mrExists === false ? 'error-badge' : isRecovered ? 'recovery-badge' : shouldStopPolling ? 'completion-badge' : ''}`}>
+                <p className={`status-message ${mrExists === false ? 'error-info' : isRecovered ? 'recovery-info' : shouldStopPolling || workflowError ? 'completion-info' : ''}`}>
+                  <span className={`status-badge ${mrExists === false ? 'error-badge' : 
+                     shouldStopPolling && workflowStatus?.status === 'completed' ? 'completion-badge' :
+                     shouldStopPolling && workflowStatus?.status === 'failed' ? 'error-badge' :
+                     workflowError ? 'error-badge' :
+                     isRecovered ? 'recovery-badge' : ''}`}>
                     {mrExists === false ? '❌ Not Found' : 
                      shouldStopPolling && workflowStatus?.status === 'completed' ? '✅ Completed' :
                      shouldStopPolling && workflowStatus?.status === 'failed' ? '❌ Failed' :
+                     workflowError ? '❌ Error' :
                      isRecovered ? '🔄 Recovered' : ''}
                   </span>
                   {statusMessage}
@@ -167,13 +196,14 @@ export const WorkflowDashboard: React.FC = () => {
           <button
             className={`tab-button ${activeTab === 'pipeline' ? 'active' : ''}`}
             onClick={() => setActiveTab('pipeline')}
-            disabled={!pipelineStatus && !isMRRoute}
+            disabled={!hasPipelineData()}
           >
             Pipeline
           </button>
           <button
             className={`tab-button ${activeTab === 'logs' ? 'active' : ''}`}
             onClick={() => setActiveTab('logs')}
+            disabled={!displaySessionId}
           >
             Logs
           </button>
@@ -198,16 +228,18 @@ export const WorkflowDashboard: React.FC = () => {
           )}
         </div>
       )}
-      {shouldStopPolling && (
+      {(shouldStopPolling || workflowError) && (
         <div className={`polling-status ${workflowStatus?.status === 'completed' ? 'success' : 'warning'}`}>
           <div className="polling-status-content">
             <span className="polling-icon">
-              {workflowStatus?.status === 'completed' ? '✅' : '⏹️'}
+              {workflowStatus?.status === 'completed' ? '✅' : workflowError ? '❌' : '⏹️'}
             </span>
             <span className="polling-text">
-              {workflowStatus?.status === 'completed' ? 
+              {workflowError ? 
+                'Error occurred - automatic status updates stopped' :
+                workflowStatus?.status === 'completed' ? 
                 'Workflow completed - automatic status updates stopped' :
-                'Status polling stopped due to error or completion'
+                'Status polling stopped due to completion or error'
               }
             </span>
             {isMRRoute && (
@@ -240,23 +272,69 @@ export const WorkflowDashboard: React.FC = () => {
                 isRecovered={isRecovered}
                 stepErrors={stepErrors}
                 mrExists={mrExists}
-                shouldStopPolling={shouldStopPolling}
+                shouldStopPolling={shouldStopPolling || !!workflowError}
               />
             </div>
             <div className="workflow-section">
               <WorkflowStatus
                 status={workflowStatus}
                 pipelineStatus={pipelineStatus}
+                ciStatus={ciStatus}
                 isRecovered={isRecovered}
                 mrExists={mrExists}
-                shouldStopPolling={shouldStopPolling}
+                shouldStopPolling={shouldStopPolling || !!workflowError}
               />
             </div>
           </div>
         )}
-        {activeTab === 'pipeline' && displaySessionId && (
+        {activeTab === 'pipeline' && hasPipelineData() && (
           <div className="pipeline-tab">
-            <PipelineMonitor sessionId={displaySessionId} />
+            {isMRRoute && ciStatus ? (
+              <div className="mr-pipeline-monitor">
+                <h3>CI/CD Pipeline Status</h3>
+                {ciStatus.pipeline && (
+                  <div className="pipeline-info">
+                    <p><strong>Pipeline ID:</strong> {ciStatus.pipeline.id}</p>
+                    <p><strong>Status:</strong> {ciStatus.pipeline.status}</p>
+                    <p><strong>Branch:</strong> {ciStatus.pipeline.ref}</p>
+                    {ciStatus.pipeline.web_url && (
+                      <p><strong>GitLab URL:</strong> 
+                        <a href={ciStatus.pipeline.web_url} target="_blank" rel="noopener noreferrer">
+                          View in GitLab 🔗
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                )}
+                {ciStatus.jobs.length > 0 && (
+                  <div className="jobs-list">
+                    <h4>Jobs ({ciStatus.jobs.length})</h4>
+                    <div className="jobs-grid">
+                      {ciStatus.jobs.map((job) => (
+                        <div key={job.id} className={`job-card ${job.status}`}>
+                          <h5>{job.name}</h5>
+                          <p><strong>Stage:</strong> {job.stage}</p>
+                          <p><strong>Status:</strong> {job.status}</p>
+                          {job.started_at && (
+                            <p><strong>Started:</strong> {new Date(job.started_at).toLocaleString()}</p>
+                          )}
+                          {job.finished_at && (
+                            <p><strong>Finished:</strong> {new Date(job.finished_at).toLocaleString()}</p>
+                          )}
+                          {job.web_url && (
+                            <a href={job.web_url} target="_blank" rel="noopener noreferrer">
+                              View Job 🔗
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <PipelineMonitor sessionId={displaySessionId!} />
+            )}
           </div>
         )}
         {activeTab === 'logs' && displaySessionId && (

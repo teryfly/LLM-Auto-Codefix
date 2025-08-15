@@ -129,7 +129,7 @@ export const useMRWorkflow = (projectName?: string, mrId?: string) => {
       console.error('Failed to fetch workflow status by MR:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch workflow status';
       setError(errorMessage);
-      setShouldStopPolling(true);
+      setShouldStopPolling(true); // 遇到任何错误都停止轮询
       // 如果是404错误，说明MR不存在
       if (errorMessage.includes('404') || errorMessage.includes('not found')) {
         setWorkflowStatus(createNotFoundStatus(projName, mrIdValue));
@@ -283,8 +283,9 @@ export const useMRWorkflow = (projectName?: string, mrId?: string) => {
       }
     } catch (error) {
       console.error('Error updating recovered workflow status:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update workflow status');
-      setShouldStopPolling(true);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update workflow status';
+      setError(errorMessage);
+      setShouldStopPolling(true); // 遇到错误立即停止轮询
     }
   };
   // 清理轮询定时器
@@ -294,17 +295,22 @@ export const useMRWorkflow = (projectName?: string, mrId?: string) => {
       pollingIntervalRef.current = null;
     }
   }, []);
-  // 轮询更新状态 - 受shouldStopPolling控制
+  // 轮询更新状态 - 受shouldStopPolling和error状态控制
   useEffect(() => {
     clearPollingInterval(); // 清理之前的定时器
-    if (projectName && mrId && isPolling && isRecovered && workflowStatus && !shouldStopPolling && mrExists) {
+    // 如果有错误或应该停止轮询，不启动新的轮询
+    if (error || shouldStopPolling) {
+      console.log('Polling stopped due to error or completion');
+      return;
+    }
+    if (projectName && mrId && isPolling && isRecovered && workflowStatus && mrExists) {
       console.log('Starting polling for workflow status updates');
       pollingIntervalRef.current = setInterval(() => {
         updateRecoveredWorkflowStatus(workflowStatus);
       }, 5000); // 每5秒更新一次
       return clearPollingInterval;
     }
-  }, [projectName, mrId, isPolling, isRecovered, workflowStatus, shouldStopPolling, mrExists, clearPollingInterval]);
+  }, [projectName, mrId, isPolling, isRecovered, workflowStatus, shouldStopPolling, mrExists, error, clearPollingInterval]);
   // 初始加载
   useEffect(() => {
     if (projectName && mrId) {
@@ -328,6 +334,7 @@ export const useMRWorkflow = (projectName?: string, mrId?: string) => {
       if (projectName && mrId) {
         setShouldStopPolling(false);
         setMrExists(null);
+        setError(null); // 清除错误状态
         fetchWorkflowStatusByMR(projectName, mrId);
       }
     }
