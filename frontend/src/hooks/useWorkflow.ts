@@ -47,7 +47,7 @@ export const useWorkflow = (sessionId?: string) => {
     projectName?: string;
     webUrl?: string;
   } | null>(null);
-  const { isPolling, handlePollingResponse, forceStopPolling } = usePolling();
+  const { isPolling, handlePollingResponse, forceStopPolling, pollingConfig } = usePolling();
   const fetchWorkflowStatus = useCallback(async (id: string) => {
     try {
       setIsLoading(true);
@@ -68,6 +68,18 @@ export const useWorkflow = (sessionId?: string) => {
       // 检查是否应该停止轮询
       if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
         forceStopPolling(`Workflow ${status.status}`);
+      }
+      // 检查步骤错误信息
+      if (status.steps) {
+        for (const [stepName, stepData] of Object.entries(status.steps)) {
+          if (stepData.status === 'failed' && stepData.error_message) {
+            // 如果是合并步骤失败，立即停止轮询
+            if (stepName === 'merge_mr' && stepData.error_message.includes('conflicts')) {
+              forceStopPolling(`Merge step failed: ${stepData.error_message}`);
+              break;
+            }
+          }
+        }
       }
       setError(null);
     } catch (err) {
@@ -119,16 +131,18 @@ export const useWorkflow = (sessionId?: string) => {
       setIsLoading(false);
     }
   }, [forceStopPolling, handlePollingResponse]);
-  // Poll for status updates
+  // Poll for status updates with configurable interval
   useEffect(() => {
     if (currentSession && isPolling) {
       fetchWorkflowStatus(currentSession);
+      // 使用配置的工作流轮询间隔
+      const workflowInterval = pollingConfig?.intervals?.workflow || 3000; // 默认3秒
       const interval = setInterval(() => {
         fetchWorkflowStatus(currentSession);
-      }, 3000);
+      }, workflowInterval * 1000); // 转换为毫秒
       return () => clearInterval(interval);
     }
-  }, [currentSession, isPolling, fetchWorkflowStatus]);
+  }, [currentSession, isPolling, fetchWorkflowStatus, pollingConfig]);
   return {
     workflowStatus,
     currentSession,

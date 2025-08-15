@@ -62,8 +62,21 @@ class WorkflowBridge:
         )
         if result["status"] == "completed":
             # Store MR info in workflow state
+            mr_obj = result["merge_request"]
+            # 安全地访问MergeRequest对象属性
+            mr_info = {}
+            if hasattr(mr_obj, 'id'):
+                mr_info['id'] = mr_obj.id
+            if hasattr(mr_obj, 'iid'):
+                mr_info['iid'] = mr_obj.iid
+            if hasattr(mr_obj, 'web_url'):
+                mr_info['web_url'] = mr_obj.web_url
+            if hasattr(mr_obj, 'title'):
+                mr_info['title'] = mr_obj.title
+            if hasattr(mr_obj, 'state'):
+                mr_info['state'] = mr_obj.state
             workflow_state.pipeline_info = {
-                "merge_request": result["merge_request"],
+                "merge_request": mr_info,
                 "pipeline_id": workflow_state.project_info.get("pipeline_id")
             }
             return result
@@ -73,9 +86,19 @@ class WorkflowBridge:
         """Execute debug loop step"""
         if not workflow_state.project_info or not workflow_state.pipeline_info:
             raise ValueError("Project info or pipeline info not available")
-        mr = workflow_state.pipeline_info.get("merge_request")
-        if not mr:
+        # 从workflow_state中获取MR对象
+        mr_info = workflow_state.pipeline_info.get("merge_request")
+        if not mr_info:
             raise ValueError("Merge request not available")
+        # 重建MR对象或使用字典
+        from models.gitlab_models import MergeRequest
+        try:
+            # 尝试重建MR对象
+            mr = MergeRequest(**mr_info)
+        except Exception as e:
+            logger.warning(f"Failed to rebuild MR object, using dict: {e}")
+            # 如果无法重建对象，使用字典
+            mr = mr_info
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
@@ -91,9 +114,19 @@ class WorkflowBridge:
         """Execute MR merge step"""
         if not workflow_state.project_info or not workflow_state.pipeline_info:
             raise ValueError("Project info or pipeline info not available")
-        mr = workflow_state.pipeline_info.get("merge_request")
-        if not mr:
+        # 从workflow_state中获取MR对象
+        mr_info = workflow_state.pipeline_info.get("merge_request")
+        if not mr_info:
             raise ValueError("Merge request not available")
+        # 重建MR对象或使用字典
+        from models.gitlab_models import MergeRequest
+        try:
+            # 尝试重建MR对象
+            mr = MergeRequest(**mr_info)
+        except Exception as e:
+            logger.warning(f"Failed to rebuild MR object, using dict: {e}")
+            # 如果无法重建对象，使用字典
+            mr = mr_info
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
@@ -106,7 +139,10 @@ class WorkflowBridge:
             workflow_state.pipeline_info["merged_pipeline_id"] = workflow_state.project_info.get("merged_pipeline_id")
             return result
         else:
-            raise Exception(result.get("error", "MR merge failed"))
+            # 合并失败时，确保错误信息被正确传递
+            error_msg = result.get("error", "MR merge failed")
+            logger.error(f"MR merge failed: {error_msg}")
+            raise Exception(error_msg)
     async def _execute_post_merge_monitor(self, workflow_state: WorkflowState, request: WorkflowStartRequest) -> Dict[str, Any]:
         """Execute post-merge monitoring step"""
         if not workflow_state.project_info:

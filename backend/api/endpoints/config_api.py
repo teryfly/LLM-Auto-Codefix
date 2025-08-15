@@ -2,18 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 import sys
 from pathlib import Path
-
 # Add src to path
 project_root = Path(__file__).parent.parent.parent.parent
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
-
 from config.config_models import AppConfig
 from models.web.api_models import PollingConfigResponse, PollingConfigUpdate
 from ..core.dependencies import get_config
-
 router = APIRouter()
-
 @router.get("/config/polling", response_model=PollingConfigResponse)
 async def get_polling_config(config: AppConfig = Depends(get_config)):
     """Get current polling configuration"""
@@ -22,22 +18,27 @@ async def get_polling_config(config: AppConfig = Depends(get_config)):
         web_config = getattr(config, 'web_config', None)
         if web_config and hasattr(web_config, 'polling'):
             polling_config = web_config.polling
+            return PollingConfigResponse(
+                default_interval=polling_config.default_interval,
+                pipeline_interval=polling_config.pipeline_interval,
+                job_interval=polling_config.job_interval,
+                log_interval=polling_config.log_interval,
+                workflow_interval=getattr(polling_config, 'workflow_interval', 3)
+            )
         else:
             # Default polling configuration
-            polling_config = {
-                "default_interval": 3,
-                "pipeline_interval": 2,
-                "job_interval": 5,
-                "log_interval": 10
-            }
-
-        return PollingConfigResponse(**polling_config)
+            return PollingConfigResponse(
+                default_interval=3,
+                pipeline_interval=2,
+                job_interval=5,
+                log_interval=10,
+                workflow_interval=3
+            )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get polling config: {str(e)}"
         )
-
 @router.put("/config/polling")
 async def update_polling_config(
     update: PollingConfigUpdate,
@@ -57,7 +58,6 @@ async def update_polling_config(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update polling config: {str(e)}"
         )
-
 @router.get("/config/app")
 async def get_app_config(config: AppConfig = Depends(get_config)):
     """Get application configuration (sanitized)"""

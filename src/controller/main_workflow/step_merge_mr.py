@@ -12,14 +12,15 @@ def merge_mr_and_wait_pipeline(config, project_info, mr):
     merge_result = mr_merge_ctrl.merge_mr(project_info["project_id"], mr.iid)
     # 检查合并结果
     if isinstance(merge_result, dict) and merge_result.get("status") == "cannot_merge":
-        # 合并失败，但这是预期的情况（比如没有变化）
-        logger.warning(f"MR {mr.iid} could not be merged: {merge_result.get('reason')}")
-        print(f"⚠️  Merge step skipped: {merge_result.get('reason')}")
+        # 合并失败，这是一个错误状态
+        error_reason = merge_result.get('reason')
+        logger.error(f"MR {mr.iid} merge failed: {error_reason}")
+        print(f"❌ Merge failed: {error_reason}")
         # 将错误信息存储到project_info中，供后续步骤使用
-        project_info["merge_skipped"] = True
-        project_info["merge_skip_reason"] = merge_result.get('reason')
-        # 不查找新的pipeline，因为没有发生合并
-        return
+        project_info["merge_failed"] = True
+        project_info["merge_error"] = error_reason
+        # 抛出异常来标记这一步失败
+        raise RuntimeError(f"Merge Request merge failed: {error_reason}")
     # 合并成功，等待新的pipeline
     time.sleep(5)  # 等待 GitLab pipeline 创建完毕
     pipelines = pipeline_client.list_pipelines(project_info["project_id"], ref="dev")

@@ -7,7 +7,14 @@ RUNNING_STATES = {"running", "pending", "created", "scheduled"}
 FAILED_STATES = {"failed"}
 MANUAL_STATES = {"manual"}
 def monitor_post_merge_pipeline(config, project_info):
-    # 检查是否跳过了合并步骤
+    # 检查是否合并失败
+    if project_info.get("merge_failed", False):
+        error_reason = project_info.get("merge_error", "Unknown merge error")
+        print(f"\n[ERROR] 合并步骤失败: {error_reason}")
+        print("[ERROR] 后合并监控步骤无法执行")
+        logger.error(f"Post-merge monitoring cannot proceed because merge failed: {error_reason}")
+        raise RuntimeError(f"Post-merge monitoring failed due to merge error: {error_reason}")
+    # 检查是否跳过了合并步骤（这种情况现在不应该发生，因为合并失败会抛出异常）
     if project_info.get("merge_skipped", False):
         reason = project_info.get("merge_skip_reason", "Unknown reason")
         print(f"\n[INFO] 合并步骤已跳过: {reason}")
