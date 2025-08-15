@@ -2,6 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { WorkflowDashboard } from './components/workflow/WorkflowDashboard';
+import { PipelineMonitor } from './components/pipeline/PipelineMonitor';
+import { ProjectPipelineView } from './components/pipeline/ProjectPipelineView';
+import { JobLogView } from './components/pipeline/JobLogView';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useConfig } from './hooks/useConfig';
 import './App.css';
@@ -34,8 +37,10 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<WorkflowDashboard />} />
               <Route path="/workflow/:sessionId" element={<WorkflowDashboard />} />
-              <Route path="/pipeline/:sessionId" element={<WorkflowDashboard />} />
-              <Route path="/:projectName/MR/:mrId" element={<WorkflowDashboard />} />
+              <Route path="/pipeline/:sessionId" element={<PipelineMonitor />} />
+              <Route path="/:projectName/pipeline" element={<ProjectPipelineView />} />
+              <Route path="/:projectName/pipeline/:pipelineId" element={<ProjectPipelineView />} />
+              <Route path="/:projectName/job/:jobId/logs" element={<JobLogView />} />
               <Route path="*" element={<WorkflowDashboard />} />
             </Routes>
           </Layout>

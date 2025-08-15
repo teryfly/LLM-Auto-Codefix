@@ -51,54 +51,18 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
       [field]: value
     }));
   };
-  // 获取MR信息
-  const getMRInfo = () => {
-    if (workflowStatus?.pipeline_info?.merge_request) {
-      const mr = workflowStatus.pipeline_info.merge_request;
-      const projectName = workflowStatus.project_info?.project_name;
-      return {
-        mrId: mr.iid || mr.id,
-        projectName: projectName,
-        webUrl: mr.web_url,
-        title: mr.title
-      };
-    }
-    return null;
-  };
-  const generateStatusLink = () => {
-    const mrInfo = getMRInfo();
-    if (mrInfo && mrInfo.projectName && mrInfo.mrId) {
-      const projectNameForUrl = mrInfo.projectName.replace('/', '-');
-      return `${window.location.origin}/${projectNameForUrl}/MR/${mrInfo.mrId}`;
-    }
-    return null;
-  };
-  const mrInfo = getMRInfo();
-  const statusLink = generateStatusLink();
   return (
     <div className="workflow-controls">
       <div className="controls-header">
         <h3>Workflow Controls</h3>
-        <div className="controls-status">
-          {isRunning && <span className="status-indicator running">Running</span>}
-          {mrInfo && (
-            <div className="mr-status-info">
-              <span className="mr-id-display">MR #{mrInfo.mrId}</span>
-              {statusLink && (
-                <button 
-                  className="copy-link-btn"
-                  onClick={() => navigator.clipboard.writeText(statusLink)}
-                  title="Copy status link"
-                >
-                  📋 Copy Link
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        {isRunning && (
+          <span className="status-indicator running">
+            🔄 Running
+          </span>
+        )}
       </div>
       <div className="controls-content">
-        {!isRunning && (
+        {!isRunning ? (
           <div className="config-section">
             <h4>Configuration</h4>
             <div className="config-form">
@@ -150,6 +114,24 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
               </div>
             </div>
           </div>
+        ) : (
+          <div className="running-info">
+            <h4>Current Configuration</h4>
+            <div className="config-display">
+              <div className="config-item">
+                <span className="config-label">Project:</span>
+                <span className="config-value">{config.project_name}</span>
+              </div>
+              <div className="config-item">
+                <span className="config-label">Branch:</span>
+                <span className="config-value">{config.source_branch} → {config.target_branch}</span>
+              </div>
+              <div className="config-item">
+                <span className="config-label">Auto-merge:</span>
+                <span className="config-value">{config.auto_merge ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+          </div>
         )}
         <div className="action-buttons">
           {!isRunning ? (
@@ -161,7 +143,7 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
               {isStarting ? (
                 <>
                   <LoadingSpinner size="small" />
-                  Starting Workflow...
+                  Starting...
                 </>
               ) : (
                 <>
@@ -190,67 +172,6 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
             </button>
           )}
         </div>
-        {isRunning && (
-          <div className="running-info">
-            <div className="info-card">
-              <h4>Current Configuration</h4>
-              <div className="config-display">
-                <div className="config-item">
-                  <span className="config-label">Project:</span>
-                  <span className="config-value">{config.project_name}</span>
-                </div>
-                <div className="config-item">
-                  <span className="config-label">Branch:</span>
-                  <span className="config-value">{config.source_branch} → {config.target_branch}</span>
-                </div>
-                <div className="config-item">
-                  <span className="config-label">Auto-merge:</span>
-                  <span className="config-value">{config.auto_merge ? 'Yes' : 'No'}</span>
-                </div>
-                {mrInfo && (
-                  <>
-                    <div className="config-item">
-                      <span className="config-label">MR ID:</span>
-                      <span className="config-value mr-id-highlight">#{mrInfo.mrId}</span>
-                    </div>
-                    {mrInfo.webUrl && (
-                      <div className="config-item">
-                        <span className="config-label">GitLab MR:</span>
-                        <span className="config-value">
-                          <a href={mrInfo.webUrl} target="_blank" rel="noopener noreferrer" className="external-link">
-                            View in GitLab 🔗
-                          </a>
-                        </span>
-                      </div>
-                    )}
-                    {statusLink && (
-                      <div className="config-item">
-                        <span className="config-label">Status Link:</span>
-                        <span className="config-value">
-                          <div className="status-link-container">
-                            <input 
-                              type="text" 
-                              value={statusLink} 
-                              readOnly 
-                              className="status-link-input"
-                            />
-                            <button 
-                              className="copy-btn"
-                              onClick={() => navigator.clipboard.writeText(statusLink)}
-                              title="Copy to clipboard"
-                            >
-                              📋
-                            </button>
-                          </div>
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

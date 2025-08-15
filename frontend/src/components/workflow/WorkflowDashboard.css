@@ -1,32 +1,31 @@
 .workflow-dashboard {
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  max-width: 100%;
-  overflow: hidden;
+  background: #f8f9fa;
+}
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
 }
 .dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  background: white;
   border-bottom: 1px solid #dee2e6;
+  padding: 1.5rem 2rem;
   flex-shrink: 0;
 }
-.dashboard-title {
-  flex: 1;
-  min-width: 0;
-}
-.dashboard-title h2 {
+.dashboard-header h1 {
   margin: 0 0 0.5rem 0;
   color: #333;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 600;
-  word-wrap: break-word;
 }
 .session-info {
-  margin: 0.5rem 0 0 0;
+  margin: 0;
   color: #6c757d;
   font-size: 0.9rem;
 }
@@ -37,105 +36,12 @@
   font-family: monospace;
   font-size: 0.8rem;
 }
-.mr-route-info {
-  margin-top: 0.5rem;
-}
-.mr-info {
-  margin: 0.5rem 0 0 0;
-  color: #6c757d;
-  font-size: 0.9rem;
-}
-.mr-info code {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  margin: 0 0.25rem;
-}
-.recovery-info {
-  margin: 0.75rem 0 0 0;
-  color: #856404;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.recovery-badge {
-  background: #fff3cd;
-  color: #856404;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid #ffeaa7;
-}
-.error-badge {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid #f5c6cb;
-}
-.completion-badge {
-  background: #d4edda;
-  color: #155724;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid #c3e6cb;
-}
-.dashboard-tabs {
-  display: flex;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  margin-left: 1rem;
-}
-.tab-button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #dee2e6;
-  background: white;
-  color: #495057;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-.tab-button:hover:not(:disabled) {
-  background: #f8f9fa;
-  border-color: #007bff;
-  color: #007bff;
-}
-.tab-button.active {
-  background: #007bff;
-  border-color: #007bff;
-  color: white;
-}
-.tab-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f8f9fa;
-}
-.dashboard-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-  gap: 1rem;
-}
 .error-message {
   background: #f8d7da;
   border: 1px solid #f5c6cb;
   border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 2rem;
+  padding: 1rem 2rem;
+  margin: 1rem 2rem;
   flex-shrink: 0;
 }
 .error-message h3 {
@@ -146,247 +52,101 @@
   margin: 0 0 1rem 0;
   color: #721c24;
 }
-.error-message .btn {
-  margin-top: 0.5rem;
-}
-.polling-status {
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 2rem;
-  flex-shrink: 0;
-}
-.polling-status.success {
-  background: #d4edda;
-  border-color: #c3e6cb;
-}
-.polling-status.warning {
-  background: #f8d7da;
-  border-color: #f5c6cb;
-}
-.polling-status-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.polling-icon {
-  font-size: 1.2rem;
-}
-.polling-text {
-  flex: 1;
-  font-weight: 500;
-}
 .dashboard-content {
   flex: 1;
-  overflow-y: auto;
-  min-height: 0;
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+  padding: 2rem;
+  overflow: hidden;
 }
-.overview-tab,
-.pipeline-tab,
-.logs-tab {
-  height: 100%;
+.left-panel,
+.right-panel {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
 }
-.workflow-section {
+.left-panel {
   background: white;
-  border: 1px solid #dee2e6;
   border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border: 1px solid #dee2e6;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-.workflow-section:last-child {
-  margin-bottom: 0;
-}
-/* MR Pipeline Monitor Styles */
-.mr-pipeline-monitor {
+.right-panel {
   background: white;
-  border: 1px solid #dee2e6;
   border-radius: 8px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
 }
-.mr-pipeline-monitor h3 {
-  margin: 0 0 1.5rem 0;
-  color: #333;
-  font-size: 1.25rem;
-  font-weight: 600;
+.panel-section {
+  padding: 1.5rem;
 }
-.pipeline-info {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 2rem;
+.panel-section:not(:last-child) {
+  border-bottom: 1px solid #e9ecef;
 }
-.pipeline-info p {
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
+.right-panel .panel-section {
+  padding: 0;
 }
-.pipeline-info strong {
-  color: #495057;
-  margin-right: 0.5rem;
-}
-.pipeline-info a {
-  color: #007bff;
-  text-decoration: none;
-  margin-left: 0.5rem;
-}
-.pipeline-info a:hover {
-  text-decoration: underline;
-}
-.jobs-list h4 {
-  margin: 0 0 1rem 0;
-  color: #495057;
-  font-size: 1rem;
-  font-weight: 600;
-}
-.jobs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-.job-card {
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  padding: 1rem;
-  transition: all 0.2s ease;
-}
-.job-card:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.job-card.success {
-  border-left: 4px solid #28a745;
-}
-.job-card.failed {
-  border-left: 4px solid #dc3545;
-}
-.job-card.running {
-  border-left: 4px solid #007bff;
-}
-.job-card.pending {
-  border-left: 4px solid #ffc107;
-}
-.job-card h5 {
-  margin: 0 0 0.75rem 0;
-  color: #333;
-  font-size: 1rem;
-  font-weight: 600;
-}
-.job-card p {
-  margin: 0.25rem 0;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-.job-card strong {
-  color: #495057;
-}
-.job-card a {
-  color: #007bff;
-  text-decoration: none;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-  display: inline-block;
-}
-.job-card a:hover {
-  text-decoration: underline;
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .dashboard-content {
+    grid-template-columns: 350px 1fr;
+  }
 }
 @media (max-width: 768px) {
   .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 1rem;
+  }
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  .dashboard-content {
+    grid-template-columns: 1fr;
+    padding: 1rem;
     gap: 1rem;
   }
-  .dashboard-tabs {
-    width: 100%;
-    justify-content: stretch;
-    margin-left: 0;
+  .left-panel {
+    order: 2;
   }
-  .tab-button {
-    flex: 1;
-    text-align: center;
+  .right-panel {
+    order: 1;
   }
-  .workflow-section {
+  .panel-section {
     padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  .dashboard-title h2 {
-    font-size: 1.25rem;
-  }
-  .recovery-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  .jobs-grid {
-    grid-template-columns: 1fr;
-  }
-  .polling-status-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
   }
 }
 @media (max-width: 480px) {
-  .dashboard-tabs {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  .tab-button {
+  .dashboard-header {
     padding: 0.75rem;
   }
-  .mr-info {
-    word-break: break-all;
+  .dashboard-header h1 {
+    font-size: 1.25rem;
   }
-  .recovery-badge,
-  .error-badge,
-  .completion-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
+  .dashboard-content {
+    padding: 0.75rem;
+  }
+  .panel-section {
+    padding: 0.75rem;
   }
 }
-.status-placeholder {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: #6c757d;
-  font-style: italic;
+/* 滚动条样式 */
+.left-panel::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar {
+  width: 8px;
 }
-.status-placeholder p {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.5;
-}
-/* MR路由特定样式 */
-.mr-route-dashboard {
-  border-left: 4px solid #1976d2;
-}
-.mr-route-dashboard .dashboard-title h2 {
-  color: #1976d2;
-}
-/* 错误状态样式 */
-.error-state {
-  opacity: 0.8;
-}
-.error-info {
-  color: #721c24;
-}
-.completion-info {
-  color: #155724;
-}
-.error-actions {
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.error-suggestion {
-  margin: 0;
-  padding: 0.75rem;
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
+.left-panel::-webkit-scrollbar-track,
+.right-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
   border-radius: 4px;
-  color: #856404;
-  font-size: 0.9rem;
+}
+.left-panel::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+.left-panel::-webkit-scrollbar-thumb:hover,
+.right-panel::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

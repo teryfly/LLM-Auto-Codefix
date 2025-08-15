@@ -1,0 +1,148 @@
+.project-info {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+.info-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.no-project-info {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #6c757d;
+}
+.no-project-info p {
+  margin: 0.5rem 0;
+  font-style: italic;
+}
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+}
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.info-section h4 {
+  margin: 0;
+  color: #495057;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.info-label {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+.info-value {
+  color: #333;
+  font-size: 0.9rem;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.info-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+.info-actions .btn {
+  width: 100%;
+  justify-content: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-success {
+  background-color: #28a745;
+  color: white;
+  border: 1px solid #28a745;
+}
+.btn-success:hover:not(:disabled) {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .info-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .info-actions {
+    gap: 0.5rem;
+  }
+  .info-actions .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+@media (max-width: 480px) {
+  .info-header h3 {
+    font-size: 1rem;
+  }
+  .info-section h4 {
+    font-size: 0.9rem;
+  }
+  .info-label {
+    font-size: 0.8rem;
+  }
+  .info-value {
+    font-size: 0.85rem;
+  }
+  .no-project-info {
+    padding: 1.5rem 0.75rem;
+  }
+}
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .info-header h3,
+  .info-section h4,
+  .info-value {
+    color: #cccccc;
+  }
+  .info-label {
+    color: #adb5bd;
+  }
+  .no-project-info {
+    color: #adb5bd;
+  }
+  .info-header,
+  .info-section h4,
+  .info-actions {
+    border-color: #495057;
+  }
+}

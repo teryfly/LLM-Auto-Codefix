@@ -19,7 +19,8 @@ from ..endpoints import (
     pipeline_api,
     task_api,
     config_api,
-    health_api
+    health_api,
+    project_pipeline_api
 )
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(task_api.router, prefix="/api/v1", tags=["tasks"])
     app.include_router(config_api.router, prefix="/api/v1", tags=["config"])
     app.include_router(health_api.router, prefix="/api/v1", tags=["health"])
+    app.include_router(project_pipeline_api.router, prefix="/api/v1", tags=["project-pipeline"])
     # Serve static files if frontend build exists
     frontend_build = project_root / "frontend" / "build"
     if frontend_build.exists():
