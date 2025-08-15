@@ -6,20 +6,12 @@
   top: 0;
   z-index: 1000;
 }
-
 .header-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 2rem;
   height: 64px;
 }
-
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
 .logo {
   display: flex;
   align-items: center;
@@ -29,83 +21,12 @@
   color: white;
   text-decoration: none;
 }
-
-.logo-icon {
-  font-size: 1.5rem;
-}
-
-.header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.session-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-
-.session-label {
-  color: #adb5bd;
-}
-
-.session-id {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.header-actions .btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 1rem;
-  padding: 0.5rem;
-  min-height: auto;
-  width: 40px;
-  height: 40px;
-  justify-content: center;
-}
-
-.header-actions .btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
 @media (max-width: 768px) {
   .header-content {
     padding: 0 1rem;
     height: 56px;
   }
-
-  .header-center {
-    display: none;
-  }
-
-  .logo-text {
-    display: none;
-  }
-
-  .header-actions .btn {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
+  .logo {
+    font-size: 1.1rem;
   }
 }

@@ -47,11 +47,13 @@ export const useWorkflow = (sessionId?: string) => {
     projectName?: string;
     webUrl?: string;
   } | null>(null);
-  const { isPolling } = usePolling();
+  const { isPolling, handlePollingResponse, forceStopPolling } = usePolling();
   const fetchWorkflowStatus = useCallback(async (id: string) => {
     try {
       setIsLoading(true);
       const status = await workflowApi.getWorkflowStatus(id);
+      // 检查响应中的错误信息
+      handlePollingResponse(status, 'workflow status');
       setWorkflowStatus(status);
       // 提取MR信息
       if (status.pipeline_info?.merge_request) {
@@ -63,19 +65,28 @@ export const useWorkflow = (sessionId?: string) => {
           webUrl: mr.web_url
         });
       }
+      // 检查是否应该停止轮询
+      if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
+        forceStopPolling(`Workflow ${status.status}`);
+      }
       setError(null);
     } catch (err) {
       console.error('Failed to fetch workflow status:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch workflow status');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch workflow status';
+      setError(errorMessage);
+      // 检查错误并停止轮询
+      handlePollingResponse({ error: errorMessage }, 'workflow API error');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [handlePollingResponse, forceStopPolling]);
   const startWorkflow = useCallback(async (config: any): Promise<WorkflowStartResponse> => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await workflowApi.startWorkflow(config);
+      // 检查启动响应中的错误
+      handlePollingResponse(response, 'workflow start');
       setCurrentSession(response.session_id);
       // 启动后立即获取一次状态
       setTimeout(() => {
@@ -85,24 +96,29 @@ export const useWorkflow = (sessionId?: string) => {
       }, 1000);
       return response;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start workflow');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start workflow';
+      setError(errorMessage);
+      handlePollingResponse({ error: errorMessage }, 'workflow start error');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [fetchWorkflowStatus]);
+  }, [fetchWorkflowStatus, handlePollingResponse]);
   const stopWorkflow = useCallback(async (id: string, force: boolean = false) => {
     try {
       setIsLoading(true);
       await workflowApi.stopWorkflow(id, force);
+      forceStopPolling('Workflow stopped by user');
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to stop workflow');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to stop workflow';
+      setError(errorMessage);
+      handlePollingResponse({ error: errorMessage }, 'workflow stop error');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [forceStopPolling, handlePollingResponse]);
   // Poll for status updates
   useEffect(() => {
     if (currentSession && isPolling) {
