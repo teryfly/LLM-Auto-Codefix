@@ -77,12 +77,14 @@ class PollingConfigResponse(BaseModel):
     pipeline_interval: int = Field(default=2, description="Pipeline status polling interval")
     job_interval: int = Field(default=5, description="Job status polling interval")
     log_interval: int = Field(default=10, description="Log polling interval")
+    workflow_interval: int = Field(default=5, description="Workflow status polling interval")
 
 class PollingConfigUpdate(BaseModel):
     default_interval: Optional[int] = None
     pipeline_interval: Optional[int] = None
     job_interval: Optional[int] = None
     log_interval: Optional[int] = None
+    workflow_interval: Optional[int] = None
 
 class ErrorResponse(BaseModel):
     error: str

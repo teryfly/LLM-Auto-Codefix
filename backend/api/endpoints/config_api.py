@@ -23,16 +23,16 @@ async def get_polling_config(config: AppConfig = Depends(get_config)):
                 pipeline_interval=polling_config.pipeline_interval,
                 job_interval=polling_config.job_interval,
                 log_interval=polling_config.log_interval,
-                workflow_interval=getattr(polling_config, 'workflow_interval', 3)
+                workflow_interval=getattr(polling_config, 'workflow_interval', 5)  # 默认5秒
             )
         else:
-            # Default polling configuration
+            # Default polling configuration with workflow interval
             return PollingConfigResponse(
                 default_interval=3,
                 pipeline_interval=2,
                 job_interval=5,
                 log_interval=10,
-                workflow_interval=3
+                workflow_interval=5  # 工作流状态轮询间隔：5秒
             )
     except Exception as e:
         raise HTTPException(
@@ -78,6 +78,13 @@ async def get_app_config(config: AppConfig = Depends(get_config)):
             "timeout": {
                 "overall_timeout_minutes": config.timeout.overall_timeout_minutes,
                 "pipeline_check_interval": config.timeout.pipeline_check_interval
+            },
+            "polling": {
+                "workflow_interval": 5,  # 工作流状态轮询间隔
+                "pipeline_interval": 2,  # Pipeline状态轮询间隔
+                "job_interval": 5,       # Job状态轮询间隔
+                "log_interval": 10,      # 日志轮询间隔
+                "error_check_interval": 2 # 错误检测间隔
             }
         }
         return sanitized_config
@@ -85,4 +92,39 @@ async def get_app_config(config: AppConfig = Depends(get_config)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get app config: {str(e)}"
+        )
+@router.get("/config/polling/detailed")
+async def get_detailed_polling_config(config: AppConfig = Depends(get_config)):
+    """Get detailed polling configuration for different components"""
+    try:
+        return {
+            "workflow": {
+                "status_interval": 5,        # 工作流状态检查间隔（秒）
+                "step_interval": 3,          # 步骤状态检查间隔（秒）
+                "error_check_interval": 2,   # 错误检测间隔（秒）
+                "timeout_minutes": 120       # 工作流超时时间（分钟）
+            },
+            "pipeline": {
+                "status_interval": 2,        # Pipeline状态检查间隔（秒）
+                "job_interval": 5,           # Job状态检查间隔（秒）
+                "trace_interval": 10,        # 日志轮询间隔（秒）
+                "timeout_minutes": 60        # Pipeline监控超时时间（分钟）
+            },
+            "ui": {
+                "dashboard_refresh": 5,      # 仪表板刷新间隔（秒）
+                "pipeline_monitor": 3,       # Pipeline监控器刷新间隔（秒）
+                "log_viewer": 10,           # 日志查看器刷新间隔（秒）
+                "status_indicator": 3        # 状态指示器刷新间隔（秒）
+            },
+            "api": {
+                "default_timeout": 30,       # 默认API超时时间（秒）
+                "retry_attempts": 3,         # 重试次数
+                "retry_delay": 2,           # 重试延迟（秒）
+                "backoff_multiplier": 1.5    # 退避乘数
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get detailed polling config: {str(e)}"
         )

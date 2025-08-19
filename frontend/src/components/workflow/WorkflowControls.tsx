@@ -22,17 +22,23 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
   workflowStatus
 }) => {
   const [config, setConfig] = useState<WorkflowConfig>({
-    project_name: 'ai/llm-cicd-tester',
+    project_name: 'ai/dotnet-ai-demo',
     source_branch: 'ai',
     target_branch: 'dev',
     auto_merge: true
   });
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const handleStart = async () => {
     setIsStarting(true);
+    setStartError(null);
     try {
       await onStart(config);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start workflow';
+      setStartError(errorMessage);
+      console.error('Workflow start failed:', error);
     } finally {
       setIsStarting(false);
     }
@@ -41,6 +47,9 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
     setIsStopping(true);
     try {
       await onStop();
+    } catch (error) {
+      console.error('Workflow stop failed:', error);
+      // 停止失败通常不需要特殊处理，因为可能工作流已经结束
     } finally {
       setIsStopping(false);
     }
@@ -50,6 +59,10 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
       ...prev,
       [field]: value
     }));
+    // 清除之前的错误信息
+    if (startError) {
+      setStartError(null);
+    }
   };
   return (
     <div className="workflow-controls">
@@ -62,6 +75,28 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
         )}
       </div>
       <div className="controls-content">
+        {/* 错误显示区域 */}
+        {startError && (
+          <div className="error-notice">
+            <div className="notice-content">
+              <span className="notice-icon">⚠️</span>
+              <div className="notice-text">
+                <strong>Failed to start workflow:</strong>
+                <br />
+                {startError}
+                <div className="error-actions">
+                  <p><strong>Possible solutions:</strong></p>
+                  <ul>
+                    <li>Check if the backend server is running</li>
+                    <li>Verify network connectivity</li>
+                    <li>Ensure the project name is correct</li>
+                    <li>Check GitLab access permissions</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {!isRunning ? (
           <div className="config-section">
             <h4>Configuration</h4>
@@ -73,8 +108,8 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
                   type="text"
                   value={config.project_name}
                   onChange={(e) => handleConfigChange('project_name', e.target.value)}
-                  placeholder="ai/llm-cicd-tester"
-                  disabled={disabled}
+                  placeholder="ai/dotnet-ai-demo"
+                  disabled={disabled || isStarting}
                 />
               </div>
               <div className="form-row">
@@ -86,7 +121,7 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
                     value={config.source_branch}
                     onChange={(e) => handleConfigChange('source_branch', e.target.value)}
                     placeholder="ai"
-                    disabled={disabled}
+                    disabled={disabled || isStarting}
                   />
                 </div>
                 <div className="form-group">
@@ -97,7 +132,7 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
                     value={config.target_branch}
                     onChange={(e) => handleConfigChange('target_branch', e.target.value)}
                     placeholder="dev"
-                    disabled={disabled}
+                    disabled={disabled || isStarting}
                   />
                 </div>
               </div>
@@ -107,7 +142,7 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
                     type="checkbox"
                     checked={config.auto_merge}
                     onChange={(e) => handleConfigChange('auto_merge', e.target.checked)}
-                    disabled={disabled}
+                    disabled={disabled || isStarting}
                   />
                   <span className="checkbox-text">Auto-merge on success</span>
                 </label>
@@ -143,7 +178,7 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
               {isStarting ? (
                 <>
                   <LoadingSpinner size="small" />
-                  Starting...
+                  Starting Workflow...
                 </>
               ) : (
                 <>

@@ -4,6 +4,10 @@ from typing import Dict, Any, Optional
 import sys
 from pathlib import Path
 from datetime import datetime
+import subprocess
+import threading
+import queue
+import time
 # Add src to path
 project_root = Path(__file__).parent.parent.parent.parent
 src_path = project_root / "src"
@@ -21,6 +25,8 @@ class WorkflowService:
         self.active_workflows: Dict[str, WorkflowExecutor] = {}
         # MR ID到Session ID的映射
         self.mr_to_session_mapping: Dict[str, str] = {}
+        # 错误监控
+        self.workflow_errors: Dict[str, str] = {}
     def start_workflow(self, session_id: str, request: WorkflowStartRequest) -> None:
         """Start a new workflow execution"""
         if session_id in self.active_workflows:
@@ -33,12 +39,19 @@ class WorkflowService:
             session_id, 
             workflow_state=executor.get_current_state()
         )
-        # Start workflow in background
-        asyncio.create_task(self._run_workflow(session_id, executor))
+        # Start workflow in background with error monitoring
+        asyncio.create_task(self._run_workflow_with_monitoring(session_id, executor))
         logger.info(f"Workflow started for session {session_id}")
-    async def _run_workflow(self, session_id: str, executor: WorkflowExecutor):
-        """Run workflow in background"""
+    async def _run_workflow_with_monitoring(self, session_id: str, executor: WorkflowExecutor):
+        """Run workflow in background with error monitoring"""
         try:
+            # 启动错误监控线程
+            error_monitor = threading.Thread(
+                target=self._monitor_workflow_errors,
+                args=(session_id, executor),
+                daemon=True
+            )
+            error_monitor.start()
             await executor.execute()
             # 执行完成后，如果有MR信息，建立映射关系
             final_state = executor.get_current_state()
@@ -55,6 +68,19 @@ class WorkflowService:
                     logger.info(f"Established MR mapping: {mr_key} -> {session_id}")
         except Exception as e:
             logger.error(f"Workflow execution failed for session {session_id}: {e}")
+            # 记录错误信息
+            self.workflow_errors[session_id] = str(e)
+            # 更新workflow状态为failed
+            try:
+                current_state = executor.get_current_state()
+                current_state.status = "failed"
+                current_state.error_message = str(e)
+                self.session_service.update_session(
+                    session_id, 
+                    workflow_state=current_state
+                )
+            except Exception as update_error:
+                logger.error(f"Failed to update session state after error: {update_error}")
         finally:
             # Update session with final workflow state
             try:
@@ -67,6 +93,53 @@ class WorkflowService:
             # Clean up completed workflow
             if session_id in self.active_workflows:
                 del self.active_workflows[session_id]
+    def _monitor_workflow_errors(self, session_id: str, executor: WorkflowExecutor):
+        """Monitor workflow logs for fatal errors"""
+        fatal_keywords = [
+            "fatal:",
+            "FATAL",
+            "fatal error",
+            "Unencrypted HTTP is not supported",
+            "Authentication failed",
+            "Permission denied",
+            "Repository not found",
+            "Connection refused"
+        ]
+        check_interval = 2  # 每2秒检查一次
+        last_log_count = 0
+        while session_id in self.active_workflows:
+            try:
+                current_state = executor.get_current_state()
+                current_logs = current_state.logs
+                # 检查新增的日志
+                if len(current_logs) > last_log_count:
+                    new_logs = current_logs[last_log_count:]
+                    for log_entry in new_logs:
+                        log_lower = log_entry.lower()
+                        for keyword in fatal_keywords:
+                            if keyword.lower() in log_lower:
+                                error_msg = f"Fatal error detected: {log_entry.strip()}"
+                                logger.error(f"Fatal error detected in session {session_id}: {error_msg}")
+                                # 停止工作流
+                                executor.stop(force=True)
+                                # 更新状态
+                                current_state.status = "failed"
+                                current_state.error_message = error_msg
+                                self.workflow_errors[session_id] = error_msg
+                                # 更新session
+                                try:
+                                    self.session_service.update_session(
+                                        session_id,
+                                        workflow_state=current_state
+                                    )
+                                except Exception as e:
+                                    logger.error(f"Failed to update session after fatal error: {e}")
+                                return  # 退出监控
+                    last_log_count = len(current_logs)
+                time.sleep(check_interval)
+            except Exception as e:
+                logger.error(f"Error in workflow error monitoring: {e}")
+                time.sleep(check_interval)
     def get_workflow_status(self, session_id: str) -> WorkflowStatusResponse:
         """Get current workflow status"""
         session = self.session_service.get_session(session_id)
@@ -76,6 +149,10 @@ class WorkflowService:
         if executor:
             # Workflow is running - get real-time state
             current_state = executor.get_current_state()
+            # 检查是否有fatal错误
+            if session_id in self.workflow_errors:
+                current_state.status = "failed"
+                current_state.error_message = self.workflow_errors[session_id]
             # Update session with current state
             try:
                 self.session_service.update_session(
@@ -108,6 +185,10 @@ class WorkflowService:
             # Workflow completed or not started - get stored state
             workflow_state = session.workflow_state
             if workflow_state:
+                # 检查是否有记录的错误
+                if session_id in self.workflow_errors:
+                    workflow_state.status = "failed"
+                    workflow_state.error_message = self.workflow_errors[session_id]
                 return WorkflowStatusResponse(
                     session_id=session_id,
                     status=workflow_state.status,
