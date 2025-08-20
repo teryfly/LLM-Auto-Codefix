@@ -64,7 +64,7 @@ class ControllerWrapper:
             def get_project_info(self, project_name: str = None):
                 """Override to use provided project name instead of input"""
                 if not project_name:
-                    project_name = "ai/llm-cicd-tester"
+                    project_name = "ai/dotnet-ai-demo"
 
                 self.wrapper.update_progress(10, f"Checking project: {project_name}")
 

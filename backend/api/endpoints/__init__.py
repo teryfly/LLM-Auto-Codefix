@@ -6,8 +6,10 @@ from . import (
     task_api,
     config_api,
     health_api,
-    project_pipeline_api
+    project_pipeline_api,
+    llm_api
 )
+
 __all__ = [
     "workflow_api",
     "gitlab_proxy_api",
@@ -15,5 +17,6 @@ __all__ = [
     "task_api",
     "config_api",
     "health_api",
-    "project_pipeline_api"
+    "project_pipeline_api",
+    "llm_api"
 ]

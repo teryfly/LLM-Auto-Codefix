@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { WorkflowStepper } from './WorkflowStepper';
+import { WorkflowProgressBar } from './WorkflowProgressBar';
+import { WorkflowConsole } from './WorkflowConsole';
 import { WorkflowControls } from './WorkflowControls';
 import { ProjectInfo } from './ProjectInfo';
 import { useWorkflow } from '../../hooks/useWorkflow';
@@ -40,12 +41,6 @@ export const WorkflowDashboard: React.FC = () => {
       }
     }
   };
-  const getDisplayTitle = () => {
-    if (sessionId) {
-      return `Workflow Session: ${sessionId}`;
-    }
-    return 'LLM Auto Codefix Dashboard';
-  };
   const getCurrentSessionId = () => {
     return sessionId || currentSession || null;
   };
@@ -58,7 +53,7 @@ export const WorkflowDashboard: React.FC = () => {
     );
   }
   const displaySessionId = getCurrentSessionId();
-  // 检测是否存在严重错误（如GitHub HTTP错误）
+  // 检测是否存在严重错误
   const hasFatalError = error && (
     error.toLowerCase().includes('fatal:') || 
     error.toLowerCase().includes('unencrypted http') ||
@@ -67,13 +62,13 @@ export const WorkflowDashboard: React.FC = () => {
   );
   return (
     <div className="workflow-dashboard">
-      <div className="dashboard-header">
-        <h1>{getDisplayTitle()}</h1>
-        {displaySessionId && (
-          <p className="session-info">
-            Session ID: <code>{displaySessionId}</code>
-          </p>
-        )}
+      {/* 顶部工作流进度条 */}
+      <div className="dashboard-progress">
+        <WorkflowProgressBar
+          steps={workflowStatus?.steps}
+          currentStep={workflowStatus?.current_step}
+          status={workflowStatus?.status}
+        />
       </div>
       {/* 显示致命错误消息 */}
       {hasFatalError && (
@@ -142,17 +137,13 @@ export const WorkflowDashboard: React.FC = () => {
             />
           </div>
         </div>
-        {/* 右侧状态区 */}
+        {/* 右侧实时控制台 */}
         <div className="right-panel">
-          <div className="panel-section">
-            <WorkflowStepper
-              steps={workflowStatus?.steps}
+          <div className="panel-section console-section">
+            <WorkflowConsole
+              sessionId={displaySessionId}
               currentStep={workflowStatus?.current_step}
-              status={workflowStatus?.status}
-              shouldStopPolling={shouldStopPolling}
-              stepErrors={
-                error ? { [workflowStatus?.current_step || 'prepare_project']: error } : {}
-              }
+              isActive={workflowStatus?.status === 'running'}
             />
           </div>
         </div>

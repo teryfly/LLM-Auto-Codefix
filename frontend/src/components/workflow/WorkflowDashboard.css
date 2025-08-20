@@ -14,51 +14,11 @@
   gap: 1rem;
 }
 
-.dashboard-header {
-  background: white;
-  border-bottom: 1px solid #dee2e6;
+.dashboard-progress {
+  flex-shrink: 0;
   padding: 1.5rem 2rem;
-  flex-shrink: 0;
-}
-
-.dashboard-header h1 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.75rem;
-  font-weight: 600;
-}
-
-.session-info {
-  margin: 0;
-  color: #6c757d;
-  font-size: 0.9rem;
-}
-
-.session-info code {
   background: #f8f9fa;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.8rem;
-}
-
-.error-message {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 6px;
-  padding: 1rem 2rem;
-  margin: 1rem 2rem;
-  flex-shrink: 0;
-}
-
-.error-message h3 {
-  margin: 0 0 0.5rem 0;
-  color: #721c24;
-}
-
-.error-message p {
-  margin: 0 0 1rem 0;
-  color: #721c24;
+  border-bottom: 1px solid #dee2e6;
 }
 
 /* Fatal error styling */
@@ -136,6 +96,26 @@
   color: #721c24;
 }
 
+/* Error message styling */
+.error-message {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 1rem 2rem;
+  margin: 1rem 2rem;
+  flex-shrink: 0;
+}
+
+.error-message h3 {
+  margin: 0 0 0.5rem 0;
+  color: #721c24;
+}
+
+.error-message p {
+  margin: 0 0 1rem 0;
+  color: #721c24;
+}
+
 /* Polling stopped message */
 .polling-stopped-message {
   background: #fff3cd;
@@ -163,6 +143,7 @@
   gap: 2rem;
   padding: 2rem;
   overflow: hidden;
+  min-height: 0; /* 确保grid item可以收缩 */
 }
 
 .left-panel,
@@ -170,7 +151,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  overflow-y: auto;
+  overflow: hidden;
+  min-height: 0; /* 确保flex item可以收缩 */
 }
 
 .left-panel {
@@ -178,18 +160,16 @@
   border-radius: 8px;
   border: 1px solid #dee2e6;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
 }
 
 .right-panel {
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  min-height: 0; /* 确保flex容器可以收缩 */
 }
 
 .panel-section {
   padding: 1.5rem;
+  flex-shrink: 0;
 }
 
 .panel-section:not(:last-child) {
@@ -200,6 +180,13 @@
   padding: 0;
 }
 
+.console-section {
+  flex: 1;
+  min-height: 0; /* 确保控制台可以收缩 */
+  display: flex;
+  flex-direction: column;
+}
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .dashboard-content {
@@ -208,12 +195,8 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard-header {
+  .dashboard-progress {
     padding: 1rem;
-  }
-  
-  .dashboard-header h1 {
-    font-size: 1.5rem;
   }
   
   .dashboard-content {
@@ -224,10 +207,12 @@
   
   .left-panel {
     order: 2;
+    max-height: 400px;
   }
   
   .right-panel {
     order: 1;
+    min-height: 500px;
   }
   
   .panel-section {
@@ -248,12 +233,8 @@
 }
 
 @media (max-width: 480px) {
-  .dashboard-header {
+  .dashboard-progress {
     padding: 0.75rem;
-  }
-  
-  .dashboard-header h1 {
-    font-size: 1.25rem;
   }
   
   .dashboard-content {
@@ -273,24 +254,20 @@
 }
 
 /* 滚动条样式 */
-.left-panel::-webkit-scrollbar,
-.right-panel::-webkit-scrollbar {
+.left-panel::-webkit-scrollbar {
   width: 8px;
 }
 
-.left-panel::-webkit-scrollbar-track,
-.right-panel::-webkit-scrollbar-track {
+.left-panel::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 4px;
 }
 
-.left-panel::-webkit-scrollbar-thumb,
-.right-panel::-webkit-scrollbar-thumb {
+.left-panel::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 4px;
 }
 
-.left-panel::-webkit-scrollbar-thumb:hover,
-.right-panel::-webkit-scrollbar-thumb:hover {
+.left-panel::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }

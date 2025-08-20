@@ -29,6 +29,10 @@ class TimeoutConfig(BaseModel):
 
 class TemplatesConfig(BaseModel):
     fix_bug_prompt: str
+    system_prompt: str = Field(
+        default="你一个是CICD助手，用户在提交代码后，运行CICD的过程中接收到pipline的日志如下，请分析问题给出解决方案。",
+        description="LLM系统提示词"
+    )
 
 class AppConfig(BaseModel):
     paths: PathsConfig
@@ -46,5 +50,5 @@ class AppConfig(BaseModel):
             authentication=AuthConfig(**data["authentication"]),
             retry_config=RetryConfig(**data["retry_config"]),
             timeout=TimeoutConfig(**data["timeout"]),
-            templates=TemplatesConfig(**data["templates"]),
+            templates=TemplatesConfig(**data.get("templates", {})),
         )

@@ -13,7 +13,7 @@ sys.path.insert(0, str(src_path))
 from models.web.workflow_models import WorkflowStep
 
 class WorkflowStartRequest(BaseModel):
-    project_name: Optional[str] = Field(default="ai/llm-cicd-tester", description="GitLab project name")
+    project_name: Optional[str] = Field(default="ai/dotnet-ai-demo", description="GitLab project name")
     source_branch: Optional[str] = Field(default="ai", description="Source branch name")
     target_branch: Optional[str] = Field(default="dev", description="Target branch name")
     auto_merge: Optional[bool] = Field(default=True, description="Auto merge on success")
