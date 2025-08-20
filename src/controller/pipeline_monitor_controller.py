@@ -2,6 +2,7 @@
 
 import time
 from clients.gitlab.job_client import JobClient
+from clients.gitlab.pipeline_client import PipelineClient
 from clients.logging.logger import logger
 
 PIPELINE_SUCCESS_STATES = {"success", "skipped", "canceled"}
@@ -16,6 +17,7 @@ class PipelineMonitorController:
     def __init__(self, config):
         self.config = config
         self.job_client = JobClient()
+        self.pipeline_client = PipelineClient()
         self.interval = config.timeout.pipeline_check_interval
         
     def monitor(self, project_id, pipeline_id):
@@ -56,3 +58,20 @@ class PipelineMonitorController:
                 time.sleep(self.interval)
                 continue
             time.sleep(self.interval)
+
+    def get_latest_pipeline(self, project_id, ref="ai"):
+        """
+        获取指定分支的最新 Pipeline
+        """
+        try:
+            logger.info(f"获取 {ref} 分支的最新 Pipeline")
+            pipeline = self.pipeline_client.get_latest_pipeline(project_id, ref)
+            if pipeline:
+                logger.info(f"找到最新 Pipeline: {pipeline.id}, 状态: {pipeline.status}")
+                return {"id": pipeline.id, "status": pipeline.status}
+            else:
+                logger.warning(f"未找到 {ref} 分支的 Pipeline")
+                return None
+        except Exception as e:
+            logger.error(f"获取最新 Pipeline 失败: {e}")
+            return None
