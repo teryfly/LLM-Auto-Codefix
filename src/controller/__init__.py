@@ -1,4 +1,4 @@
-# controller/__init__.py
+# controller package init
 
 from .main_controller import MainController
 from .pipeline_monitor_controller import PipelineMonitorController
