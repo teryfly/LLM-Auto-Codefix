@@ -1,5 +1,6 @@
 # clients/gitlab/merge_request_client.py
 import requests
+import re
 from .gitlab_client import GitLabClient
 from models.gitlab_models import MergeRequest
 from config.config_manager import ConfigManager
@@ -21,8 +22,167 @@ class MergeRequestClient(GitLabClient):
             "title": title,
             "remove_source_branch": False
         }
-        mr = self.post(f"api/v4/projects/{project_id}/merge_requests", data=data)
-        return MergeRequest(**mr)
+        try:
+            mr = self.post(f"api/v4/projects/{project_id}/merge_requests", data=data)
+            return MergeRequest(**mr)
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 409:
+                # 解析错误消息中的 MR ID
+                error_text = e.response.text
+                logger.warning(f"Merge request creation failed with 409 conflict: {error_text}")
+                
+                existing_mr_id = self._extract_existing_mr_id(error_text)
+                if existing_mr_id:
+                    logger.info(f"Found existing open MR with ID: {existing_mr_id}")
+                    print(f"🔍 发现已存在的开放 MR，ID: {existing_mr_id}", flush=True)
+                    
+                    # 尝试关闭现有的 MR
+                    if self._close_existing_mr(project_id, existing_mr_id, source_branch):
+                        logger.info(f"Successfully closed existing MR {existing_mr_id}, retrying creation")
+                        print(f"✅ 成功关闭现有 MR {existing_mr_id}，重新创建", flush=True)
+                        
+                        # 重新尝试创建 MR
+                        mr = self.post(f"api/v4/projects/{project_id}/merge_requests", data=data)
+                        return MergeRequest(**mr)
+                    else:
+                        logger.error(f"Failed to close existing MR {existing_mr_id}")
+                        print(f"❌ 关闭现有 MR {existing_mr_id} 失败", flush=True)
+                        raise
+                else:
+                    logger.error("Could not extract MR ID from error message")
+                    print("❌ 无法从错误消息中提取 MR ID", flush=True)
+                    raise
+            else:
+                raise
+
+    def _extract_existing_mr_id(self, error_text: str) -> int:
+        """
+        从 GitLab API 错误消息中提取现有 MR 的 ID
+        错误消息格式通常为: "Another open merge request already exists for this source branch: !21"
+        """
+        try:
+            # 使用正则表达式匹配 MR ID
+            # 匹配模式: !数字 或者 #数字
+            pattern = r'[!#](\d+)'
+            matches = re.findall(pattern, error_text)
+            
+            if matches:
+                mr_id = int(matches[0])
+                logger.debug(f"Extracted MR ID from error message: {mr_id}")
+                return mr_id
+            
+            # 备用匹配模式，直接查找数字
+            pattern2 = r'merge request.*?(\d+)'
+            matches2 = re.findall(pattern2, error_text, re.IGNORECASE)
+            if matches2:
+                mr_id = int(matches2[0])
+                logger.debug(f"Extracted MR ID using backup pattern: {mr_id}")
+                return mr_id
+                
+            logger.warning(f"Could not extract MR ID from error message: {error_text}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error extracting MR ID from error message: {e}")
+            return None
+
+    def _close_existing_mr(self, project_id: int, mr_iid: int, expected_source_branch: str) -> bool:
+        """
+        关闭指定的 MR
+        
+        Args:
+            project_id: 项目 ID
+            mr_iid: MR 的 IID (internal ID)
+            expected_source_branch: 期望的源分支名称，用于验证
+            
+        Returns:
+            bool: 是否成功关闭
+        """
+        try:
+            # 首先获取 MR 详情进行验证
+            logger.info(f"Getting details for MR {mr_iid} to verify before closing")
+            mr_details = self.get(f"api/v4/projects/{project_id}/merge_requests/{mr_iid}")
+            
+            # 验证源分支是否匹配
+            actual_source_branch = mr_details.get("source_branch")
+            if actual_source_branch != expected_source_branch:
+                logger.warning(f"MR {mr_iid} source branch mismatch. Expected: {expected_source_branch}, Actual: {actual_source_branch}")
+                print(f"⚠️ MR {mr_iid} 源分支不匹配，跳过关闭", flush=True)
+                return False
+            
+            # 检查 MR 状态
+            mr_state = mr_details.get("state")
+            if mr_state != "opened":
+                logger.info(f"MR {mr_iid} is not in 'opened' state (current: {mr_state}), skipping close")
+                print(f"ℹ️ MR {mr_iid} 状态为 {mr_state}，无需关闭", flush=True)
+                return True  # 不是开放状态，认为成功
+            
+            logger.info(f"Closing MR {mr_iid} (source: {actual_source_branch}, title: {mr_details.get('title', 'N/A')})")
+            print(f"🔒 关闭 MR {mr_iid}: {mr_details.get('title', 'N/A')}", flush=True)
+            
+            # 关闭 MR
+            close_data = {
+                "state_event": "close"
+            }
+            
+            result = self.put(f"api/v4/projects/{project_id}/merge_requests/{mr_iid}", data=close_data)
+            
+            final_state = result.get("state")
+            if final_state == "closed":
+                logger.info(f"Successfully closed MR {mr_iid}")
+                print(f"✅ 成功关闭 MR {mr_iid}", flush=True)
+                return True
+            else:
+                logger.error(f"Failed to close MR {mr_iid}, final state: {final_state}")
+                print(f"❌ 关闭 MR {mr_iid} 失败，最终状态: {final_state}", flush=True)
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error closing MR {mr_iid}: {e}")
+            print(f"❌ 关闭 MR {mr_iid} 时出错: {e}", flush=True)
+            return False
+
+    def close_merge_request(self, project_id: int, mr_iid: int) -> bool:
+        """
+        公共方法：关闭指定的 MR
+        
+        Args:
+            project_id: 项目 ID
+            mr_iid: MR 的 IID
+            
+        Returns:
+            bool: 是否成功关闭
+        """
+        self._ensure_http_base()
+        return self._close_existing_mr(project_id, mr_iid, None)
+
+    def list_open_merge_requests(self, project_id: int, source_branch: str = None) -> list:
+        """
+        列出项目的开放 MR
+        
+        Args:
+            project_id: 项目 ID
+            source_branch: 可选的源分支过滤
+            
+        Returns:
+            list: MR 列表
+        """
+        self._ensure_http_base()
+        try:
+            params = {
+                "state": "opened",
+                "per_page": 100
+            }
+            if source_branch:
+                params["source_branch"] = source_branch
+                
+            mrs = self.get(f"api/v4/projects/{project_id}/merge_requests", params=params)
+            logger.info(f"Found {len(mrs)} open merge requests")
+            return [MergeRequest(**mr) for mr in mrs]
+            
+        except Exception as e:
+            logger.error(f"Error listing open merge requests: {e}")
+            return []
 
     def get_merge_request(self, project_id: int, mr_id: int):
         self._ensure_http_base()

@@ -12,7 +12,17 @@ def create_merge_request(config, project_info):
 
     now = datetime.datetime.now().strftime("%H%M%S")
     mr_title = f"LLM Auto Merge ai->dev [{now}]"
-    mr = mr_ctrl.create_mr(project_info["project_id"], "ai", "dev", mr_title)
+    
+    logger.info("Starting merge request creation with automatic conflict resolution")
+    print("📝 开始创建 MR（自动处理冲突）", flush=True)
+    
+    # 使用带冲突解决的创建方法
+    mr = mr_ctrl.create_mr_with_conflict_resolution(
+        project_info["project_id"], 
+        "ai", 
+        "dev", 
+        mr_title
+    )
 
     print("准备编译中，请等待...")
     time.sleep(10)
@@ -24,4 +34,7 @@ def create_merge_request(config, project_info):
         raise Exception("No pipeline found for 'ai' branch.")
     project_info["pipeline_id"] = pipelines[0].id
 
+    logger.info(f"MR created successfully with pipeline {pipelines[0].id}")
+    print(f"✅ MR 创建完成，Pipeline ID: {pipelines[0].id}", flush=True)
+    
     return mr
