@@ -99,10 +99,10 @@ def run_debug_loop(config, project_info, mr):
             print(fixed_code)
             print("=" * 80)
             
-            # 6. 使用 CodeFileExecutorLib 应用修复的代码
+            # 6. 使用 CodeFileExecutorLib 应用修复的代码，并收集输出
             print("💾 使用 CodeFileExecutorLib 应用修复的代码...", flush=True)
             try:
-                apply_success = source_ctrl.apply_fixed_code_with_executor(fixed_code)
+                apply_success, executor_output_lines = source_ctrl.apply_fixed_code_with_executor(fixed_code)
                 if not apply_success:
                     print("❌ 代码应用失败", flush=True)
                     logger.error("代码应用失败")
@@ -113,10 +113,13 @@ def run_debug_loop(config, project_info, mr):
                 logger.error(f"应用修复代码异常: {e}")
                 return False
             
-            # 7. 提交修复的代码并推送到远程 ai 分支
+            # 7. 提交修复的代码并推送到远程 ai 分支，传递执行器输出
             print("📤 提交修复的代码到 Git...", flush=True)
             try:
-                push_success = git_push_ctrl.commit_and_push_ai_changes(f"LLM auto fix - 调试循环第{debug_idx + 1}次修复")
+                push_success = git_push_ctrl.commit_and_push_ai_changes(
+                    f"LLM auto fix - 调试循环第{debug_idx + 1}次修复",
+                    executor_output_lines
+                )
                 if not push_success:
                     print("❌ Git 提交推送失败", flush=True)
                     logger.error("Git 提交推送失败")

@@ -43,13 +43,13 @@ class SourceCodeController:
             raise RuntimeError(error_msg)
     def apply_fixed_code_with_executor(self, fixed_code: str):
         """
-        使用 CodeFileExecutorLib 应用修复的代码
+        使用 codefileexecutorlib 应用修复的代码
         """
         try:
-            from CodeFileExecutorLib import CodeFileExecutor
+            from codefileexecutorlib import CodeFileExecutor
             ai_work_dir = self.config.paths.ai_work_dir
             absolute_path = os.path.abspath(ai_work_dir)
-            logger.info(f"使用 CodeFileExecutorLib 应用修复代码到: {absolute_path}")
+            logger.info(f"使用 codefileexecutorlib 应用修复代码到: {absolute_path}")
             print(f"💾 应用修复代码到: {absolute_path}", flush=True)
             # 创建执行器实例，设置为ERROR级别日志，禁用备份
             executor = CodeFileExecutor(log_level="ERROR", backup_enabled=False)
@@ -61,7 +61,7 @@ class SourceCodeController:
                 stream_type = stream.get('type', 'info')
                 message = stream.get('message', '')
                 timestamp = stream.get('timestamp', '')
-                # 打印所有 CodeFileExecutorLib 的日志信息
+                # 打印所有 codefileexecutorlib 的日志信息
                 print(f"[{stream_type.upper()}] {message}", flush=True)
                 logger.info(f"CodeFileExecutor: [{stream_type}] {message}")
                 # 处理汇总信息
@@ -80,10 +80,10 @@ class SourceCodeController:
                     logger.error(f"CodeFileExecutor 执行出错: {message}")
             # 检查是否有错误
             if has_error:
-                error_msg = "CodeFileExecutorLib 执行过程中出现错误"
+                error_msg = "codefileexecutorlib 执行过程中出现错误"
                 logger.error(error_msg)
                 print(f"❌ {error_msg}", flush=True)
-                print("🚨 按要求，CodeFileExecutorLib出错则退出程序", flush=True)
+                print("🚨 按要求，codefileexecutorlib出错则退出程序", flush=True)
                 sys.exit(1)  # 按要求，如果出错则退出程序
             if success_count > 0:
                 logger.info(f"成功应用 {success_count} 个代码修复任务")
@@ -94,14 +94,14 @@ class SourceCodeController:
                 print("⚠️ 没有成功应用任何代码修复任务", flush=True)
                 return False
         except ImportError as e:
-            error_msg = "CodeFileExecutorLib 库未安装，请先安装相关依赖"
+            error_msg = "codefileexecutorlib 库未安装，请先安装相关依赖"
             logger.error(error_msg)
             print(f"❌ {error_msg}", flush=True)
-            print("🚨 按要求，CodeFileExecutorLib出错则退出程序", flush=True)
+            print("🚨 按要求，codefileexecutorlib出错则退出程序", flush=True)
             sys.exit(1)  # 按要求，如果出错则退出程序
         except Exception as e:
-            error_msg = f"CodeFileExecutorLib 执行失败: {e}"
+            error_msg = f"codefileexecutorlib 执行失败: {e}"
             logger.error(error_msg)
             print(f"❌ {error_msg}", flush=True)
-            print("🚨 按要求，CodeFileExecutorLib出错则退出程序", flush=True)
+            print("🚨 按要求，codefileexecutorlib出错则退出程序", flush=True)
             sys.exit(1)  # 按要求，如果出错则退出程序
