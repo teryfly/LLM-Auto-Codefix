@@ -101,16 +101,25 @@ def run_debug_and_deployment_phase(config, project_info: dict) -> dict:
         
         print(f"✅ GitLab 项目信息获取成功: ID={project_id}", flush=True)
         
-        # 创建 MR
-        mr = create_merge_request(config, workflow_project_info)
+        # 创建初始MR
+        initial_mr = create_merge_request(config, workflow_project_info)
         
-        # 调试循环
-        run_debug_loop(config, workflow_project_info, mr)
+        # 调试循环 - 可能会创建新的MR并更新到workflow_project_info["current_mr"]
+        debug_result = run_debug_loop(config, workflow_project_info, initial_mr)
+        if debug_result["status"] != "success":
+            logger.error(f"调试循环失败: {debug_result['message']}")
+            print(f"❌ 调试循环失败: {debug_result['message']}", flush=True)
+            return debug_result
         
-        # 合并 MR 并等待 Pipeline
-        merge_mr_and_wait_pipeline(config, workflow_project_info, mr)
+        # 合并MR并等待Pipeline - 使用调试循环更新的MR信息
+        # 检查是否有新的MR被创建
+        current_mr = workflow_project_info.get("current_mr") or initial_mr
+        logger.info(f"准备合并MR: iid={getattr(current_mr, 'iid', 'N/A')}")
+        print(f"🔄 准备合并 MR: iid={getattr(current_mr, 'iid', 'N/A')}", flush=True)
         
-        # 监控合并后的 Pipeline
+        merge_mr_and_wait_pipeline(config, workflow_project_info, current_mr)
+        
+        # 监控合并后的Pipeline
         monitor_post_merge_pipeline(config, workflow_project_info)
         
         return {

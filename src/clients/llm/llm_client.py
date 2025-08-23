@@ -46,7 +46,7 @@ class LLMClient:
         return llm_resp.choices[0].message.content.strip()
 
     def fix_code_stream(self, prompt: str) -> Iterator[str]:
-        """流式修复代码"""
+        """流式修复代码，不打印内容，只返回流式数据"""
         try:
             # 先加载 system prompt，并打印日志，确保顺序与预期一致
             logger.debug("Loading system prompt template before streaming request")
@@ -67,9 +67,8 @@ class LLMClient:
                 "Content-Type": "application/json"
             }
 
-            # 记录即将发起请求的日志，再进行网络请求，避免“AI分析开始...”先打印造成顺序错觉
+            # 记录即将发起请求的日志
             logger.info("Sending streaming chat completion request")
-            print(f"🤖 AI分析开始...", flush=True)
 
             with requests.post(
                 f"{self.api_url}/chat/completions",

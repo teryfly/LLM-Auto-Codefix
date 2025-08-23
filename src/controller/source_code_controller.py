@@ -3,10 +3,12 @@ import os
 import sys
 from operations.source.source_reader import SourceConcatenatorClient
 from clients.logging.logger import logger
+
 class SourceCodeController:
     def __init__(self, config):
         self.config = config
         self.concatenator = SourceConcatenatorClient(config.services.llm_url)
+
     def get_failed_source_codes(self, project_name):
         git_dir = self.config.paths.git_work_dir
         project_path = f"{git_dir}/{project_name}"
@@ -14,6 +16,7 @@ class SourceCodeController:
         code = result.document
         logger.info(f"源码获取成功，长度: {len(code)}")
         return code
+
     def get_project_source_from_ai_dir(self):
         """
         从 ai_work_dir 获取项目源代码 (使用 source-code-concatenator API)
@@ -41,9 +44,15 @@ class SourceCodeController:
             logger.error(error_msg)
             print(f"❌ {error_msg}", flush=True)
             raise RuntimeError(error_msg)
+
     def apply_fixed_code_with_executor(self, fixed_code: str):
         """
         使用 codefileexecutorlib 应用修复的代码
+
+        Returns:
+            (bool, list[str]): 
+                - 第一个返回值表示是否成功应用至少一个修复且无错误
+                - 第二个返回值为执行过程中收集的输出行（用于上游作为 commit 注释提取步骤行）
         """
         try:
             from codefileexecutorlib import CodeFileExecutor
@@ -51,57 +60,69 @@ class SourceCodeController:
             absolute_path = os.path.abspath(ai_work_dir)
             logger.info(f"使用 codefileexecutorlib 应用修复代码到: {absolute_path}")
             print(f"💾 应用修复代码到: {absolute_path}", flush=True)
-            # 创建执行器实例，设置为ERROR级别日志，禁用备份
+
             executor = CodeFileExecutor(log_level="ERROR", backup_enabled=False)
-            # 执行代码修复
+
             has_error = False
             success_count = 0
             total_count = 0
+            collected_output_lines = []
+
             for stream in executor.codeFileExecutHelper(absolute_path, fixed_code):
                 stream_type = stream.get('type', 'info')
                 message = stream.get('message', '')
                 timestamp = stream.get('timestamp', '')
-                # 打印所有 codefileexecutorlib 的日志信息
-                print(f"[{stream_type.upper()}] {message}", flush=True)
+
+                # 统一收集一份纯文本行，供上层用于提取 commit 备注
+                text_line = f"[{stream_type.upper()}] {message}"
+                collected_output_lines.append(text_line)
+
+                # 打印来自执行器的日志信息
+                print(text_line, flush=True)
                 logger.info(f"CodeFileExecutor: [{stream_type}] {message}")
-                # 处理汇总信息
+
                 if stream_type == 'summary':
                     data = stream.get('data', {})
                     total_count = data.get('total_tasks', 0)
                     success_count = data.get('successful_tasks', 0)
                     failed_count = data.get('failed_tasks', 0)
                     execution_time = data.get('execution_time', 'N/A')
-                    print(f"📊 执行汇总: 总任务 {total_count}, 成功 {success_count}, 失败 {failed_count}, 用时 {execution_time}", flush=True)
+                    summary_line = f"📊 执行汇总: 总任务 {total_count}, 成功 {success_count}, 失败 {failed_count}, 用时 {execution_time}"
+                    print(summary_line, flush=True)
+                    collected_output_lines.append(summary_line)
                     logger.info(f"CodeFileExecutor 执行汇总: 总任务 {total_count}, 成功 {success_count}, 失败 {failed_count}")
                     if failed_count > 0:
                         has_error = True
                 elif stream_type == 'error':
                     has_error = True
                     logger.error(f"CodeFileExecutor 执行出错: {message}")
-            # 检查是否有错误
+
+            # 汇总成功/失败
             if has_error:
                 error_msg = "codefileexecutorlib 执行过程中出现错误"
                 logger.error(error_msg)
                 print(f"❌ {error_msg}", flush=True)
                 print("🚨 按要求，codefileexecutorlib出错则退出程序", flush=True)
-                sys.exit(1)  # 按要求，如果出错则退出程序
+                sys.exit(1)
+
             if success_count > 0:
                 logger.info(f"成功应用 {success_count} 个代码修复任务")
                 print(f"✅ 成功应用 {success_count} 个代码修复任务", flush=True)
-                return True
+                return True, collected_output_lines
             else:
                 logger.warning("没有成功应用任何代码修复任务")
                 print("⚠️ 没有成功应用任何代码修复任务", flush=True)
-                return False
+                return False, collected_output_lines
+
         except ImportError as e:
             error_msg = "codefileexecutorlib 库未安装，请先安装相关依赖"
             logger.error(error_msg)
             print(f"❌ {error_msg}", flush=True)
             print("🚨 按要求，codefileexecutorlib出错则退出程序", flush=True)
-            sys.exit(1)  # 按要求，如果出错则退出程序
+            sys.exit(1)
         except Exception as e:
             error_msg = f"codefileexecutorlib 执行失败: {e}"
             logger.error(error_msg)
             print(f"❌ {error_msg}", flush=True)
             print("🚨 按要求，codefileexecutorlib出错则退出程序", flush=True)
-            sys.exit(1)  # 按要求，如果出错则退出程序
+            sys.exit(1)
