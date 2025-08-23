@@ -14,6 +14,19 @@ from .step_error_handling import (
     handle_keyboard_interrupt,
     handle_unhandled_error
 )
+from .step_preparation_phase import (
+    check_git_work_dir_exists,
+    check_current_git_branch,
+    git_add_and_show_changes,
+    git_commit_with_note,
+    git_push_changes,
+    run_preparation_phase
+)
+from .step_extract_project_info import (
+    extract_project_info_from_git,
+    extract_project_name_from_url,
+    prepare_project_info_for_workflow
+)
 
 # These imports are kept separate to avoid circular imports
 def get_init_controller_functions():
@@ -56,6 +69,19 @@ __all__ = [
     "safe_execute_step",
     "handle_keyboard_interrupt",
     "handle_unhandled_error",
+    
+    # Preparation phase steps
+    "check_git_work_dir_exists",
+    "check_current_git_branch",
+    "git_add_and_show_changes",
+    "git_commit_with_note",
+    "git_push_changes",
+    "run_preparation_phase",
+    
+    # Project info extraction steps
+    "extract_project_info_from_git",
+    "extract_project_name_from_url",
+    "prepare_project_info_for_workflow",
     
     # Function getters to avoid circular imports
     "get_init_controller_functions",

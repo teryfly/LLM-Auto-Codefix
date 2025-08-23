@@ -1,14 +1,13 @@
+# config/config_validator.py
 from .config_manager import ConfigManager
 from .config_models import AppConfig
 from pydantic import ValidationError
-
 def validate_config(config: AppConfig) -> None:
     try:
         config.paths
         config.services
         config.authentication
         config.retry_config
-        config.templates
     except AttributeError as e:
         raise ValueError(f"Missing required config section: {e}")
     if not hasattr(config.services, "gitlab_http_url"):
@@ -22,10 +21,6 @@ def validate_config(config: AppConfig) -> None:
         raise ValueError("debug_max_time must be >= 1")
     if config.retry_config.total_timeout < 60:
         raise ValueError("total_timeout must be >= 60")
-        
-
-    # Add further schema or value checks as needed
-
 def safe_load_and_validate(path: str) -> AppConfig:
     config = ConfigManager.load_config(path)
     validate_config(config)

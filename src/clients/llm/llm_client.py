@@ -1,35 +1,32 @@
 # clients/llm/llm_client.py
-
 import requests
 import json
 import os
 from config.config_manager import ConfigManager
 from models.llm_models import LLMRequest, LLMResponse
+from operations.template.template_manager import TemplateManager
 from typing import Iterator, Dict, Any
-
 class LLMClient:
     def __init__(self):
         config = ConfigManager.get_config()
         self.api_url = config.services.llm_url
         self.model = config.services.llm_model
         self.api_key = os.getenv("OPENAI_API_KEY", "sk-test-key-for-compatibility-Test")
-        self.system_prompt = config.templates.system_prompt
-
+        self.template_manager = TemplateManager()
     def fix_code(self, prompt: str) -> str:
         """非流式修复代码"""
+        system_prompt = self.template_manager.get_system_prompt()
         request = LLMRequest(
             model=self.model,
             messages=[
-                {"role": "system", "content": self.system_prompt},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ]
         )
-        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        
         resp = requests.post(
             f"{self.api_url}/chat/completions", 
             json=request.dict(), 
@@ -40,25 +37,23 @@ class LLMClient:
         data = resp.json()
         llm_resp = LLMResponse(**data)
         return llm_resp.choices[0].message.content.strip()
-
     def fix_code_stream(self, prompt: str) -> Iterator[str]:
         """流式修复代码"""
+        system_prompt = self.template_manager.get_system_prompt()
         request_data = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": self.system_prompt},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
             "stream": True,
             "temperature": 0.7,
             "max_tokens": 2048
         }
-        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        
         try:
             with requests.post(
                 f"{self.api_url}/chat/completions",
@@ -68,7 +63,6 @@ class LLMClient:
                 timeout=120
             ) as response:
                 response.raise_for_status()
-                
                 for line in response.iter_lines():
                     if line:
                         line = line.decode('utf-8')
@@ -86,7 +80,6 @@ class LLMClient:
                                 continue
         except Exception as e:
             yield f"Error: {str(e)}"
-
     def analyze_pipeline_logs(self, logs: str) -> Iterator[str]:
         """分析Pipeline日志的流式API"""
         prompt = f"Pipeline日志内容：\n\n{logs}\n\n请分析上述日志中的错误，并提供详细的解决方案。"
