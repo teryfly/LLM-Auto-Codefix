@@ -68,7 +68,7 @@ class LLMClient:
             }
 
             # 记录即将发起请求的日志
-            logger.info("Sending streaming chat completion request")
+            logger.info("正在连接AI服务器...")
 
             with requests.post(
                 f"{self.api_url}/chat/completions",
